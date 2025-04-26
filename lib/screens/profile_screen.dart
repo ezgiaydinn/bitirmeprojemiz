@@ -1,13 +1,18 @@
-import 'package:bitirmeprojesi/screens/profileedit_screen.dart';
+// lib/screens/profile_screen.dart
+
 import 'package:flutter/material.dart';
+import 'package:bitirmeprojesi/screens/profileedit_screen.dart';
 import 'package:bitirmeprojesi/screens/login_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   final String name;
-  //final int userId;
-  //final String email;
+  final String userId;
 
-  const ProfileScreen({Key? key, required this.name}) : super(key: key);
+  const ProfileScreen({
+    Key? key,
+    required this.name,
+    required this.userId,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -35,9 +40,13 @@ class ProfileScreen extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
                 ),
-                Text("E-posta: $name", style: TextStyle(color: Colors.grey)),
+                Text(
+                  "E-posta: $name@example.com",
+                  style: const TextStyle(color: Colors.white70),
+                ),
               ],
             ),
           ),
@@ -48,7 +57,11 @@ class ProfileScreen extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => EditProfileScreen()),
+                MaterialPageRoute(
+                  builder: (_) => EditProfileScreen(
+                    userId: userId,   // sadece userId geçiliyor
+                  ),
+                ),
               );
             },
           ),
@@ -69,8 +82,8 @@ class ProfileScreen extends StatelessWidget {
             onTap: () {
               Navigator.pushAndRemoveUntil(
                 context,
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
-                (route) => false,
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    (route) => false,
               );
             },
           ),

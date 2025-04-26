@@ -1,10 +1,19 @@
+// lib/components/search_grid_cell.dart
+
 import 'package:flutter/material.dart';
 
 class SearchGridCell extends StatelessWidget {
   final Map<String, dynamic> sObj;
   final int index;
+  /// Kullanıcı ID’si parametresi
+  final String userId;
 
-  const SearchGridCell({super.key, required this.sObj, required this.index});
+  const SearchGridCell({
+    Key? key,
+    required this.sObj,
+    required this.index,
+    required this.userId,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -17,32 +26,40 @@ class SearchGridCell extends StatelessWidget {
       const Color(0xFFFFAB91),
     ];
 
-    return Container(
-      decoration: BoxDecoration(
-        color: backgroundColors[index % backgroundColors.length],
-        borderRadius: BorderRadius.circular(15),
-      ),
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 4),
-      child: Column(
-        children: [
-          Text(
-            sObj["name"].toString(),
-            maxLines: 1,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-                color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 15),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: Image.asset(
-              sObj["img"].toString(),
-              width: media.width * 0.23,
-              height: media.width * 0.23 * 1.6,
-              fit: BoxFit.cover,
+    return GestureDetector(
+      onTap: () {
+        // İstersen burada widget.userId kullanarak kategori seçimini backend'e bildirebilirsin
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: backgroundColors[index % backgroundColors.length],
+          borderRadius: BorderRadius.circular(15),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 4),
+        child: Column(
+          children: [
+            Text(
+              sObj["name"].toString(),
+              maxLines: 1,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+              ),
             ),
-          )
-        ],
+            const SizedBox(height: 15),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.asset(
+                sObj["img"].toString(),
+                width: media.width * 0.23,
+                height: media.width * 0.23 * 1.6,
+                fit: BoxFit.cover,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

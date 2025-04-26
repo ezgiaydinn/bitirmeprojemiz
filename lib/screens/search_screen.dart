@@ -1,9 +1,17 @@
+// lib/screens/search_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:bitirmeprojesi/screens/search_filter_screen.dart';
 import 'package:bitirmeprojesi/components/search_grid_cell.dart';
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key});
+  /// Kullanıcı ID’si parametresi
+  final String userId;
+
+  const SearchScreen({
+    Key? key,
+    required this.userId,
+  }) : super(key: key);
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -22,8 +30,6 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    var media = MediaQuery.of(context).size;
-
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFB),
       appBar: AppBar(
@@ -35,7 +41,9 @@ class _SearchScreenState extends State<SearchScreen> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const SearchFilterScreen()),
+                MaterialPageRoute(
+                  builder: (_) => SearchFilterScreen(userId: widget.userId),
+                ),
               );
             },
           ),
@@ -57,7 +65,9 @@ class _SearchScreenState extends State<SearchScreen> {
                 fillColor: Colors.white,
               ),
               onChanged: (value) {
-                setState(() {});
+                setState(() {
+                  // İleride widget.userId kullanarak API araması yapılabilir
+                });
               },
             ),
             const SizedBox(height: 20),
@@ -71,7 +81,11 @@ class _SearchScreenState extends State<SearchScreen> {
                   mainAxisSpacing: 16,
                 ),
                 itemBuilder: (context, index) {
-                  return SearchGridCell(sObj: searchArr[index], index: index);
+                  return SearchGridCell(
+                    sObj: searchArr[index],
+                    index: index,
+                    userId: widget.userId,
+                  );
                 },
               ),
             ),

@@ -1,7 +1,15 @@
+// lib/screens/search_filter_screen.dart
+
 import 'package:flutter/material.dart';
 
 class SearchFilterScreen extends StatelessWidget {
-  const SearchFilterScreen({super.key});
+  /// Kullanıcı ID’si parametresi
+  final String userId;
+
+  const SearchFilterScreen({
+    Key? key,
+    required this.userId,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -13,7 +21,8 @@ class SearchFilterScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text("Sort By", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const Text("Sort By",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const ListTile(
             title: Text("Relevance"),
             leading: Radio(value: true, groupValue: true, onChanged: null),
@@ -23,7 +32,8 @@ class SearchFilterScreen extends StatelessWidget {
             leading: Radio(value: false, groupValue: true, onChanged: null),
           ),
           const Divider(),
-          const Text("Categories", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const Text("Categories",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           Wrap(
             spacing: 10,
             children: ["Fiction", "Business", "Science", "Children"]
@@ -33,10 +43,11 @@ class SearchFilterScreen extends StatelessWidget {
           const SizedBox(height: 20),
           ElevatedButton(
             onPressed: () {
+              // Filtreleri uygularken widget.userId kullanılarak backend çağrısı yapılabilir
               Navigator.pop(context);
             },
             child: const Text("Apply Filters"),
-          )
+          ),
         ],
       ),
     );
