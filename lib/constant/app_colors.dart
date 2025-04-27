@@ -16,6 +16,7 @@ class AppColors {
 
   // Nötr tonlar
   static const Color white        = Color(0xFFFFFFFF);
+  static const Color white70      = Color(0xB3FFFFFF);
   static const Color greyLight    = Color(0xFFC8C8C8);
   static const Color greyMedium   = Color(0xFFD8D8D8);
   static const Color greyText     = Color(0xFF3F3D56);
