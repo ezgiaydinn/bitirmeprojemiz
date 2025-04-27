@@ -7,8 +7,13 @@ import 'package:bitirmeprojesi/screens/login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String userId;
+  final String name; // ➡️ Buraya name parametresini ekledim!
 
-  const ProfileScreen({Key? key, required this.userId}) : super(key: key);
+  const ProfileScreen({
+    Key? key,
+    required this.userId,
+    required this.name, // ➡️ Name’i required yaptım
+  }) : super(key: key);
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -60,82 +65,80 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: const Color(0xFFA2D9FF),
         elevation: 0,
       ),
-      body:
-          isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : Column(
-                children: [
-                  Container(
-                    width: double.infinity,
-                    color: const Color(0xFFA2D9FF),
-                    padding: const EdgeInsets.symmetric(vertical: 30),
-                    child: Column(
-                      children: [
-                        const CircleAvatar(
-                          radius: 80,
-                          backgroundImage: AssetImage(
-                            "assets/images/avatar.png",
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          "Kullanıcı Adı: $name",
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          "E-posta: $email",
-                          style: const TextStyle(color: Colors.grey),
-                        ),
-                      ],
-                    ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+        children: [
+          Container(
+            width: double.infinity,
+            color: const Color(0xFFA2D9FF),
+            padding: const EdgeInsets.symmetric(vertical: 30),
+            child: Column(
+              children: [
+                const CircleAvatar(
+                  radius: 80,
+                  backgroundImage: AssetImage(
+                    "assets/images/avatar.png",
                   ),
-                  const SizedBox(height: 30),
-                  ListTile(
-                    leading: const Icon(Icons.edit),
-                    title: const Text("Edit Profile"),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (context) =>
-                                  EditProfileScreen(userId: widget.userId),
-                        ),
-                      );
-                    },
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  "Kullanıcı Adı: $name",
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
                   ),
-                  ListTile(
-                    leading: const Icon(Icons.settings),
-                    title: const Text("Settings"),
-                    onTap: () {},
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.help_outline),
-                    title: const Text("Help us"),
-                    onTap: () {},
-                  ),
-                  const Divider(),
-                  ListTile(
-                    leading: const Icon(Icons.logout, color: Colors.red),
-                    title: const Text(
-                      "Log Out",
-                      style: TextStyle(color: Colors.red),
-                    ),
-                    onTap: () {
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const LoginScreen(),
-                        ),
-                        (route) => false,
-                      );
-                    },
-                  ),
-                ],
-              ),
+                ),
+                Text(
+                  "E-posta: $email",
+                  style: const TextStyle(color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 30),
+          ListTile(
+            leading: const Icon(Icons.edit),
+            title: const Text("Edit Profile"),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      EditProfileScreen(userId: widget.userId),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.settings),
+            title: const Text("Settings"),
+            onTap: () {},
+          ),
+          ListTile(
+            leading: const Icon(Icons.help_outline),
+            title: const Text("Help us"),
+            onTap: () {},
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.logout, color: Colors.red),
+            title: const Text(
+              "Log Out",
+              style: TextStyle(color: Colors.red),
+            ),
+            onTap: () {
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const LoginScreen(),
+                ),
+                    (route) => false,
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 }
