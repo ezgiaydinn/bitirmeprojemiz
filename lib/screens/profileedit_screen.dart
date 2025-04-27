@@ -6,14 +6,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
 class EditProfileScreen extends StatefulWidget {
-  const EditProfileScreen({super.key});
+  final String userId;
+
+  const EditProfileScreen({Key? key, required this.userId}) : super(key: key);
 
   @override
   State<EditProfileScreen> createState() => _EditProfileScreenState();
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
-  String userId = "";
+  late String userId;
   String name = "";
   String email = "";
   String password = "";
@@ -21,33 +23,25 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   File? profileImage;
 
+  final String baseUrl = 'https://projembackend-production-4549.up.railway.app';
+
   @override
   void initState() {
     super.initState();
+    userId = widget.userId;
     fetchUserData();
   }
 
   Future<void> fetchUserData() async {
-    final prefs = await SharedPreferences.getInstance();
-    showSnack("DEBUG - userId: ${prefs.getString("userId")}");
-
-    //final prefs = await SharedPreferences.getInstance();
-    //userId = prefs.getString("userId") ?? "";
-
-    if (userId.isEmpty) {
-      showSnack("User not logged in", isError: true);
-      return;
-    }
-
     final response = await http.get(
-      Uri.parse("http://192.168.1.30:3000/api/user/$userId"),
+      Uri.parse("$baseUrl/api/auth/profile/$userId"),
     );
+
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       setState(() {
-        name = data["name"];
-        email = data["email"];
-        password = data["password"];
+        name = data["user"]["name"] ?? "";
+        email = data["user"]["email"] ?? "";
         isLoading = false;
       });
     } else {
@@ -56,9 +50,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> updateProfile(String field, String value) async {
-    const String apiUrl = 'http://192.168.1.30:3000/api/updateProfile';
+    final String apiUrl = '$baseUrl/api/auth/updateProfile';
 
-    final response = await http.post(
+    final response = await http.put(
       Uri.parse(apiUrl),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({"userId": userId, "field": field, "value": value}),
@@ -77,7 +71,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (picked != null) {
       setState(() => profileImage = File(picked.path));
 
-      final uri = Uri.parse("http://192.168.1.30:3000/api/uploadProfileImage");
+      final uri = Uri.parse("$baseUrl/api/auth/uploadProfileImage");
       final request =
           http.MultipartRequest('POST', uri)
             ..fields['userId'] = userId
