@@ -1,13 +1,15 @@
+// lib/screens/profileedit_screen.dart
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
+import 'package:bitirmeprojesi/constant/app_colors.dart';
+import 'package:bitirmeprojesi/constant/app_text_style.dart';
 
 class EditProfileScreen extends StatefulWidget {
   final String userId;
-
   const EditProfileScreen({Key? key, required this.userId}) : super(key: key);
 
   @override
@@ -16,13 +18,11 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   late String userId;
-  String name = "";
-  String email = "";
-  String password = "";
+  String name = '';
+  String email = '';
+  String password = '';
   bool isLoading = true;
-
   File? profileImage;
-
   final String baseUrl = 'https://projembackend-production-4549.up.railway.app';
 
   @override
@@ -33,170 +33,142 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> fetchUserData() async {
-    final response = await http.get(
-      Uri.parse("$baseUrl/api/auth/profile/$userId"),
-    );
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
+    final resp = await http.get(Uri.parse('$baseUrl/api/auth/profile/$userId'));
+    if (resp.statusCode == 200) {
+      final user = jsonDecode(resp.body)['user'];
       setState(() {
-        name = data["user"]["name"] ?? "";
-        email = data["user"]["email"] ?? "";
+        name = user['name'] ?? '';
+        email = user['email'] ?? '';
+        password = ''; // şifreyi backend'den çekmiyoruz
         isLoading = false;
       });
     } else {
-      showSnack("Failed to load profile", isError: true);
+      showSnack('Profil yüklenemedi', isError: true);
     }
   }
 
   Future<void> updateProfile(String field, String value) async {
-    final String apiUrl = '$baseUrl/api/auth/updateProfile';
-
-    final response = await http.put(
-      Uri.parse(apiUrl),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({"userId": userId, "field": field, "value": value}),
+    final resp = await http.put(
+      Uri.parse('$baseUrl/api/auth/updateProfile'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'userId': userId, 'field': field, 'value': value}),
     );
-
-    if (response.statusCode == 200) {
-      showSnack("$field updated successfully ✅");
+    if (resp.statusCode == 200) {
+      showSnack('$field başarıyla güncellendi ✅');
     } else {
-      showSnack("Failed to update $field", isError: true);
+      showSnack('$field güncellenemedi ❌', isError: true);
     }
   }
 
   Future<void> pickImage() async {
     final picker = ImagePicker();
     final picked = await picker.pickImage(source: ImageSource.gallery);
-    if (picked != null) {
-      setState(() => profileImage = File(picked.path));
+    if (picked == null) return;
+    setState(() => profileImage = File(picked.path));
 
-      final uri = Uri.parse("$baseUrl/api/auth/uploadProfileImage");
-      final request =
-          http.MultipartRequest('POST', uri)
-            ..fields['userId'] = userId
-            ..files.add(
-              await http.MultipartFile.fromPath('image', picked.path),
-            );
-
-      final response = await request.send();
-      if (response.statusCode == 200) {
-        showSnack("Profile photo updated ✅");
-      } else {
-        showSnack("Failed to upload photo", isError: true);
-      }
+    final req = http.MultipartRequest('POST', Uri.parse('$baseUrl/api/auth/uploadProfileImage'))
+      ..fields['userId'] = userId
+      ..files.add(await http.MultipartFile.fromPath('image', picked.path));
+    final resp = await req.send();
+    if (resp.statusCode == 200) {
+      showSnack('Profil fotoğrafı güncellendi ✅');
+    } else {
+      showSnack('Fotoğraf yüklenemedi ❌', isError: true);
     }
   }
 
-  void showSnack(String message, {bool isError = false}) {
+  void showSnack(String msg, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? Colors.red : Colors.green,
+        content: Text(msg),
+        backgroundColor: isError ? Colors.redAccent : AppColors.accent,
         duration: const Duration(seconds: 2),
       ),
     );
   }
 
   void _showEditPasswordSheet() {
-    String current = "";
-    String newPass = "";
-    String confirm = "";
-    bool obscureOld = true;
-    bool obscureNew = true;
-    bool obscureConfirm = true;
+    String current = '', newPass = '', confirm = '';
+    bool obscureOld = true, obscureNew = true, obscureConfirm = true;
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) {
+      builder: (ctx) {
+        final pad = MediaQuery.of(ctx).viewInsets.bottom + 20;
         return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-            top: 20,
-            left: 20,
-            right: 20,
-          ),
+          padding: EdgeInsets.fromLTRB(20, 20, 20, pad),
           child: StatefulBuilder(
-            builder: (context, setModalState) {
+            builder: (ctx2, setM) {
               return Column(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text(
-                    "Edit Password",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
+                  Text('Şifreyi Düzenle',
+                      style: AppTextStyle.HEADING.copyWith(color: AppColors.accent)),
+                  const SizedBox(height: 12),
                   TextField(
                     obscureText: obscureOld,
-                    onChanged: (val) => current = val,
+                    onChanged: (v) => current = v,
                     decoration: InputDecoration(
-                      labelText: "Current Password",
+                      labelText: 'Mevcut Şifre',
                       suffixIcon: IconButton(
-                        icon: Icon(
-                          obscureOld ? Icons.visibility : Icons.visibility_off,
-                        ),
-                        onPressed:
-                            () => setModalState(() => obscureOld = !obscureOld),
+                        icon: Icon(obscureOld ? Icons.visibility_off : Icons.visibility),
+                        onPressed: () => setM(() => obscureOld = !obscureOld),
                       ),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
+                  const SizedBox(height: 12),
                   TextField(
                     obscureText: obscureNew,
-                    onChanged: (val) => newPass = val,
+                    onChanged: (v) => newPass = v,
                     decoration: InputDecoration(
-                      labelText: "New Password",
+                      labelText: 'Yeni Şifre',
                       suffixIcon: IconButton(
-                        icon: Icon(
-                          obscureNew ? Icons.visibility : Icons.visibility_off,
-                        ),
-                        onPressed:
-                            () => setModalState(() => obscureNew = !obscureNew),
+                        icon: Icon(obscureNew ? Icons.visibility_off : Icons.visibility),
+                        onPressed: () => setM(() => obscureNew = !obscureNew),
                       ),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
+                  const SizedBox(height: 12),
                   TextField(
                     obscureText: obscureConfirm,
-                    onChanged: (val) => confirm = val,
+                    onChanged: (v) => confirm = v,
                     decoration: InputDecoration(
-                      labelText: "Confirm Password",
+                      labelText: 'Şifreyi Onayla',
                       suffixIcon: IconButton(
-                        icon: Icon(
-                          obscureConfirm
-                              ? Icons.visibility
-                              : Icons.visibility_off,
-                        ),
-                        onPressed:
-                            () => setModalState(
-                              () => obscureConfirm = !obscureConfirm,
-                            ),
+                        icon: Icon(obscureConfirm ? Icons.visibility_off : Icons.visibility),
+                        onPressed: () => setM(() => obscureConfirm = !obscureConfirm),
                       ),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                   const SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: () async {
                       if (current != password) {
-                        Navigator.pop(context);
-                        showSnack(
-                          "Current password is incorrect ❌",
-                          isError: true,
-                        );
+                        Navigator.pop(ctx2);
+                        showSnack('Mevcut şifre yanlış ❌', isError: true);
                         return;
                       }
                       if (newPass.length < 6 || newPass != confirm) {
-                        Navigator.pop(context);
-                        showSnack(
-                          "Password mismatch or too short ❌",
-                          isError: true,
-                        );
+                        Navigator.pop(ctx2);
+                        showSnack('Şifre uyuşmuyor veya çok kısa ❌', isError: true);
                         return;
                       }
-
                       setState(() => password = newPass);
-                      await updateProfile("password", newPass);
-                      Navigator.pop(context);
+                      await updateProfile('password', newPass);
+                      Navigator.pop(ctx2);
                     },
-                    child: const Text("Save"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.accent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text('Kaydet', style: TextStyle(color: Colors.white)),
                   ),
                 ],
               );
@@ -207,57 +179,45 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  Widget _buildProfileItem(
-    String label,
-    String value,
-    IconData icon,
-    VoidCallback onEdit,
-  ) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(label),
-      subtitle: Text(value),
-      trailing: IconButton(icon: const Icon(Icons.edit), onPressed: onEdit),
-    );
-  }
-
   void _showEditBottomSheet({
     required String title,
     required String currentValue,
-    required Function(String) onSave,
+    required ValueChanged<String> onSave,
   }) {
-    final controller = TextEditingController(text: currentValue);
+    final ctrl = TextEditingController(text: currentValue);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) {
+      builder: (ctx) {
+        final pad = MediaQuery.of(ctx).viewInsets.bottom + 20;
         return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-            top: 20,
-            left: 20,
-            right: 20,
-          ),
+          padding: EdgeInsets.fromLTRB(20, 20, 20, pad),
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                "Edit $title",
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 10),
+              Text('$title Düzenle', style: AppTextStyle.HEADING.copyWith(color: AppColors.accent)),
+              const SizedBox(height: 12),
               TextField(
-                controller: controller,
-                decoration: InputDecoration(labelText: title),
+                controller: ctrl,
+                decoration: InputDecoration(
+                  labelText: title,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
               ),
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () {
-                  final val = controller.text.trim();
-                  Navigator.pop(context);
-                  onSave(val);
+                  Navigator.pop(ctx);
+                  onSave(ctrl.text.trim());
                 },
-                child: const Text("Save"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.accent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text('Kaydet', style: TextStyle(color: Colors.white)),
               ),
             ],
           ),
@@ -266,80 +226,95 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
+  Widget _buildProfileItem(String label, String value, IconData icon, VoidCallback onEdit) {
+    final horizontal = MediaQuery.of(context).size.width * 0.05;
+    return ListTile(
+      contentPadding: EdgeInsets.symmetric(horizontal: horizontal, vertical: 4),
+      leading: Icon(icon, color: AppColors.accent),
+      title: Text(label, style: AppTextStyle.BODY.copyWith(fontWeight: FontWeight.w500)),
+      subtitle: Text(value, style: AppTextStyle.BODY),
+      trailing: IconButton(
+        icon: Icon(Icons.edit, color: AppColors.accent),
+        onPressed: onEdit,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    // ekran ölçüleri
+    final h = MediaQuery.of(context).size.height;
+    final padVmedium = h * 0.04;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Edit Profile"),
-        backgroundColor: const Color(0xFFA2D9FF),
+        title: const Text('Profil Düzenle'),
+        backgroundColor: AppColors.accent,
       ),
-      body:
-          isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : ListView(
+      backgroundColor: AppColors.backgroundLight,
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+        padding: EdgeInsets.symmetric(vertical: padVmedium),
+        child: Column(
+          children: [
+            GestureDetector(
+              onTap: pickImage,
+              child: CircleAvatar(
+                radius: MediaQuery.of(context).size.width * 0.18,
+                backgroundColor: Colors.grey[300],
+                backgroundImage: profileImage != null
+                    ? FileImage(profileImage!)
+                    : const AssetImage('assets/default_avatar.png') as ImageProvider,
+                child: Align(
+                  alignment: Alignment.bottomRight,
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: const BoxDecoration(
+                        color: Colors.white, shape: BoxShape.circle),
+                    child: Icon(Icons.edit, color: AppColors.accent, size: 20),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(name, style: AppTextStyle.HEADING),
+            const SizedBox(height: 24),
+            Card(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              elevation: 4,
+              child: Column(
                 children: [
-                  const SizedBox(height: 20),
-                  Center(
-                    child: GestureDetector(
-                      onTap: pickImage,
-                      child: CircleAvatar(
-                        radius: 55,
-                        backgroundColor: Colors.grey[300],
-                        backgroundImage:
-                            profileImage != null
-                                ? FileImage(profileImage!)
-                                : const AssetImage("assets/default_avatar.png")
-                                    as ImageProvider,
-                        child: Align(
-                          alignment: Alignment.bottomRight,
-                          child: Container(
-                            padding: const EdgeInsets.all(5),
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.edit, size: 20),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Center(
-                    child: Text(
-                      name,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  _buildProfileItem("Name", name, Icons.person, () {
+                  _buildProfileItem('Kullanıcı Adı', name, Icons.person, () {
                     _showEditBottomSheet(
-                      title: "Name",
+                      title: 'Kullanıcı Adı',
                       currentValue: name,
-                      onSave: (val) {
-                        setState(() => name = val);
-                        updateProfile("name", val);
+                      onSave: (v) {
+                        setState(() => name = v);
+                        updateProfile('name', v);
                       },
                     );
                   }),
-                  _buildProfileItem("Email", email, Icons.email, () {
+                  const Divider(height: 0, indent: 72),
+                  _buildProfileItem('E-posta', email, Icons.email, () {
                     _showEditBottomSheet(
-                      title: "Email",
+                      title: 'E-posta',
                       currentValue: email,
-                      onSave: (val) {
-                        setState(() => email = val);
-                        updateProfile("email", val);
+                      onSave: (v) {
+                        setState(() => email = v);
+                        updateProfile('email', v);
                       },
                     );
                   }),
-                  _buildProfileItem(
-                    "Password",
-                    "********",
-                    Icons.lock,
-                    _showEditPasswordSheet,
-                  ),
+                  const Divider(height: 0, indent: 72),
+                  _buildProfileItem('Şifre', '********', Icons.lock, _showEditPasswordSheet),
                 ],
               ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

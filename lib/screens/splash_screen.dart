@@ -1,6 +1,7 @@
 // lib/screens/splash_screen.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:bitirmeprojesi/constant/app_colors.dart';
 import 'package:bitirmeprojesi/screens/login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -24,8 +25,9 @@ class _SplashScreenState extends State<SplashScreen>
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     );
-    _animation = Tween<double>(begin: 0.8, end: 1.2)
-        .animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+    _animation = Tween<double>(begin: 0.8, end: 1.2).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
     _controller.repeat(reverse: true);
 
     // 3 saniye sonra LoginScreen’e geç
@@ -46,14 +48,17 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Dinamik logo boyutu için ekran genişliğini al
+    final w = MediaQuery.of(context).size.width;
+    final logoSize = w * 0.4; // genişliğin %40'ı kadar
+
     return Scaffold(
-      // Nötr-pastel gradient
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color(0xFFF5F5F5),
-              Color(0xFFE8E8E8),
+              AppColors.backgroundLight,
+              AppColors.backgroundDark,
             ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
@@ -66,8 +71,8 @@ class _SplashScreenState extends State<SplashScreen>
               borderRadius: BorderRadius.circular(20),
               child: Image.asset(
                 'assets/images/logo.png',
-                width: 250,
-                height: 250,
+                width: logoSize,
+                height: logoSize,
                 fit: BoxFit.cover,
               ),
             ),

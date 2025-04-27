@@ -1,8 +1,10 @@
+// lib/screens/login_screen.dart
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constant/app_text_style.dart';
+import 'package:bitirmeprojesi/constant/app_colors.dart';
 import '../screens/forgot_password.dart';
 import '../screens/home_page.dart';
 import '../screens/signup_secreen.dart';
@@ -71,7 +73,7 @@ class _LoginScreenState extends State<LoginScreen> {
           _errorMessage = 'Giriş başarısız. Bilgileri kontrol edin.';
         });
       }
-    } catch (e) {
+    } catch (_) {
       setState(() {
         _errorMessage =
         'Sunucuya ulaşılamadı. İnternet bağlantınızı kontrol edin.';
@@ -83,15 +85,24 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    // 1) MediaQuery ile ekran boyutunu al
+    final size = MediaQuery.of(context).size;
+    final w = size.width;
+    final h = size.height;
+
+    // 2) Orantılı değerleri tanımla
+    final logoSize     = w * 0.25;   // ekran genişliğinin %25’i
+    final padH         = w * 0.06;   // yatay padding
+    final padVsmall    = h * 0.02;   // küçük dikey boşluk
+    final padVmedium   = h * 0.04;   // orta dikey boşluk
+    final padVlarge    = h * 0.08;   // büyük dikey boşluk
+    final buttonHeight = h * 0.06;   // buton yüksekliği
+
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Color(0xFFF5F5F5), // Çok açık gri
-              Color(0xFFE8E8E8), // Hafif daha koyu gri
-            ],
+            colors: [AppColors.backgroundLight, AppColors.backgroundDark],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -99,28 +110,33 @@ class _LoginScreenState extends State<LoginScreen> {
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: EdgeInsets.symmetric(horizontal: padH),
               child: Column(
                 children: [
-                  const SizedBox(height: 40),
+                  // Üst boşluk
+                  SizedBox(height: padVlarge),
+
+                  // Logo (dinamik boyutlu)
                   ClipRRect(
                     borderRadius: BorderRadius.circular(16),
                     child: Image.asset(
                       "assets/images/logo.png",
-                      height: 80,
-                      width: 80,
+                      width: logoSize,
+                      height: logoSize,
                       fit: BoxFit.cover,
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: padVmedium),
+
+                  // Form Kart
                   Card(
                     elevation: 6,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    color: Colors.white,
+                    color: AppColors.white,
                     child: Padding(
-                      padding: const EdgeInsets.all(24),
+                      padding: EdgeInsets.all(padH),
                       child: Form(
                         key: _formKey,
                         child: Column(
@@ -147,8 +163,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 return null;
                               },
                             ),
-                            const SizedBox(height: 16),
-                            // Şifre & göz ikonu
+                            SizedBox(height: padVsmall),
+
+                            // Şifre
                             TextFormField(
                               controller: _passwordController,
                               obscureText: _obscurePassword,
@@ -179,7 +196,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 return null;
                               },
                             ),
-                            const SizedBox(height: 12),
+                            SizedBox(height: padVsmall),
+
                             // Şifremi Unuttum?
                             Align(
                               alignment: Alignment.centerRight,
@@ -187,7 +205,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 onTap: () => Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (_) => const ForgotPasswordScreen(),
+                                    builder: (_) =>
+                                    const ForgotPasswordScreen(),
                                   ),
                                 ),
                                 child: Text(
@@ -197,38 +216,44 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 24),
-                            // Giriş Yap butonu
+                            SizedBox(height: padVmedium),
+
+                            // Giriş Yap Butonu
                             SizedBox(
                               width: double.infinity,
-                              height: 48,
+                              height: buttonHeight,
                               child: ElevatedButton(
                                 onPressed: _isLoading ? null : _login,
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor:
-                                  const Color(0xFF4A90E2), // Düzeltilen kısım
-                                  foregroundColor: Colors.white,
+                                  backgroundColor: AppColors.accent,
+                                  foregroundColor: AppColors.white,
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius:
+                                    BorderRadius.circular(12),
                                   ),
                                   elevation: 4,
                                 ),
                                 child: _isLoading
                                     ? const CircularProgressIndicator(
-                                  valueColor: AlwaysStoppedAnimation(
-                                      Colors.white),
+                                  valueColor:
+                                  AlwaysStoppedAnimation(
+                                      AppColors.white),
                                 )
-                                    : const Text(
+                                    : Text(
                                   'Giriş Yap',
-                                  style: TextStyle(
+                                  style: AppTextStyle
+                                      .MIDDLE_BUTTON_TEXT
+                                      .copyWith(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
+                                    letterSpacing: 0,
                                   ),
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 12),
-                            // Hata mesajı
+                            SizedBox(height: padVsmall),
+
+                            // Hata Mesajı
                             AnimatedSwitcher(
                               duration: const Duration(milliseconds: 300),
                               child: _errorMessage.isEmpty
@@ -236,8 +261,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                   : Text(
                                 _errorMessage,
                                 key: const ValueKey('error'),
-                                style: const TextStyle(
-                                    color: Colors.redAccent),
+                                style: TextStyle(
+                                  color: AppColors.logoPink,
+                                  fontSize: 14,
+                                ),
                               ),
                             ),
                           ],
@@ -245,29 +272,36 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  // Kayıt Ol satırı
+                  SizedBox(height: padVsmall),
+
+                  // Kayıt Ol Satırı
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text("Üye değil misin?"),
+                      Text(
+                        "Üye değil misin?",
+                        style: AppTextStyle.MINI_DEFAULT_DESCRIPTION_TEXT,
+                      ),
                       GestureDetector(
                         onTap: () => Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                              builder: (_) => const SignupScreen()),
+                              builder: (_) =>
+                              const SignupScreen()),
                         ),
                         child: Text(
                           " Kayıt Ol",
-                          style: AppTextStyle.MINI_DESCRIPTION_TEXT.copyWith(
-                            color: const Color(0xFF4A90E2),
+                          style: AppTextStyle
+                              .MINI_DESCRIPTION_TEXT
+                              .copyWith(
+                            color: AppColors.accent,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: padVmedium),
                 ],
               ),
             ),
