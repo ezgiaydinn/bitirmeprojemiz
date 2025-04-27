@@ -66,9 +66,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (picked == null) return;
     setState(() => profileImage = File(picked.path));
 
-    final req = http.MultipartRequest('POST', Uri.parse('$baseUrl/api/auth/uploadProfileImage'))
-      ..fields['userId'] = userId
-      ..files.add(await http.MultipartFile.fromPath('image', picked.path));
+    final req =
+        http.MultipartRequest(
+            'POST',
+            Uri.parse('$baseUrl/api/auth/uploadProfileImage'),
+          )
+          ..fields['userId'] = userId
+          ..files.add(await http.MultipartFile.fromPath('image', picked.path));
     final resp = await req.send();
     if (resp.statusCode == 200) {
       showSnack('Profil fotoğrafı güncellendi ✅');
@@ -104,8 +108,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text('Şifreyi Düzenle',
-                      style: AppTextStyle.HEADING.copyWith(color: AppColors.accent)),
+                  Text(
+                    'Şifreyi Düzenle',
+                    style: AppTextStyle.HEADING.copyWith(
+                      color: AppColors.accent,
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   TextField(
                     obscureText: obscureOld,
@@ -113,10 +121,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     decoration: InputDecoration(
                       labelText: 'Mevcut Şifre',
                       suffixIcon: IconButton(
-                        icon: Icon(obscureOld ? Icons.visibility_off : Icons.visibility),
+                        icon: Icon(
+                          obscureOld ? Icons.visibility_off : Icons.visibility,
+                        ),
                         onPressed: () => setM(() => obscureOld = !obscureOld),
                       ),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -126,10 +138,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     decoration: InputDecoration(
                       labelText: 'Yeni Şifre',
                       suffixIcon: IconButton(
-                        icon: Icon(obscureNew ? Icons.visibility_off : Icons.visibility),
+                        icon: Icon(
+                          obscureNew ? Icons.visibility_off : Icons.visibility,
+                        ),
                         onPressed: () => setM(() => obscureNew = !obscureNew),
                       ),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -139,10 +155,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     decoration: InputDecoration(
                       labelText: 'Şifreyi Onayla',
                       suffixIcon: IconButton(
-                        icon: Icon(obscureConfirm ? Icons.visibility_off : Icons.visibility),
-                        onPressed: () => setM(() => obscureConfirm = !obscureConfirm),
+                        icon: Icon(
+                          obscureConfirm
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
+                        onPressed:
+                            () => setM(() => obscureConfirm = !obscureConfirm),
                       ),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -155,7 +178,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       }
                       if (newPass.length < 6 || newPass != confirm) {
                         Navigator.pop(ctx2);
-                        showSnack('Şifre uyuşmuyor veya çok kısa ❌', isError: true);
+                        showSnack(
+                          'Şifre uyuşmuyor veya çok kısa ❌',
+                          isError: true,
+                        );
                         return;
                       }
                       setState(() => password = newPass);
@@ -168,7 +194,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text('Kaydet', style: TextStyle(color: Colors.white)),
+                    child: const Text(
+                      'Kaydet',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ],
               );
@@ -196,13 +225,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('$title Düzenle', style: AppTextStyle.HEADING.copyWith(color: AppColors.accent)),
+              Text(
+                '$title Düzenle',
+                style: AppTextStyle.HEADING.copyWith(color: AppColors.accent),
+              ),
               const SizedBox(height: 12),
               TextField(
                 controller: ctrl,
                 decoration: InputDecoration(
                   labelText: title,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -217,7 +251,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text('Kaydet', style: TextStyle(color: Colors.white)),
+                child: const Text(
+                  'Kaydet',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ],
           ),
@@ -226,12 +263,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  Widget _buildProfileItem(String label, String value, IconData icon, VoidCallback onEdit) {
+  Widget _buildProfileItem(
+    String label,
+    String value,
+    IconData icon,
+    VoidCallback onEdit,
+  ) {
     final horizontal = MediaQuery.of(context).size.width * 0.05;
     return ListTile(
       contentPadding: EdgeInsets.symmetric(horizontal: horizontal, vertical: 4),
       leading: Icon(icon, color: AppColors.accent),
-      title: Text(label, style: AppTextStyle.BODY.copyWith(fontWeight: FontWeight.w500)),
+      title: Text(
+        label,
+        style: AppTextStyle.BODY.copyWith(fontWeight: FontWeight.w500),
+      ),
       subtitle: Text(value, style: AppTextStyle.BODY),
       trailing: IconButton(
         icon: Icon(Icons.edit, color: AppColors.accent),
@@ -252,69 +297,90 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         backgroundColor: AppColors.accent,
       ),
       backgroundColor: AppColors.backgroundLight,
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-        padding: EdgeInsets.symmetric(vertical: padVmedium),
-        child: Column(
-          children: [
-            GestureDetector(
-              onTap: pickImage,
-              child: CircleAvatar(
-                radius: MediaQuery.of(context).size.width * 0.18,
-                backgroundColor: Colors.grey[300],
-                backgroundImage: profileImage != null
-                    ? FileImage(profileImage!)
-                    : const AssetImage('assets/default_avatar.png') as ImageProvider,
-                child: Align(
-                  alignment: Alignment.bottomRight,
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: const BoxDecoration(
-                        color: Colors.white, shape: BoxShape.circle),
-                    child: Icon(Icons.edit, color: AppColors.accent, size: 20),
-                  ),
+      body:
+          isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : SingleChildScrollView(
+                padding: EdgeInsets.symmetric(vertical: padVmedium),
+                child: Column(
+                  children: [
+                    GestureDetector(
+                      onTap: pickImage,
+                      child: CircleAvatar(
+                        radius: MediaQuery.of(context).size.width * 0.18,
+                        backgroundColor: Colors.grey[300],
+                        backgroundImage:
+                            profileImage != null
+                                ? FileImage(profileImage!)
+                                : const AssetImage('assets/default_avatar.png')
+                                    as ImageProvider,
+                        child: Align(
+                          alignment: Alignment.bottomRight,
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.edit,
+                              color: AppColors.accent,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(name, style: AppTextStyle.HEADING),
+                    const SizedBox(height: 24),
+                    Card(
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      elevation: 4,
+                      child: Column(
+                        children: [
+                          _buildProfileItem(
+                            'Kullanıcı Adı',
+                            name,
+                            Icons.person,
+                            () {
+                              _showEditBottomSheet(
+                                title: 'Kullanıcı Adı',
+                                currentValue: name,
+                                onSave: (v) {
+                                  setState(() => name = v);
+                                  updateProfile('name', v);
+                                },
+                              );
+                            },
+                          ),
+                          const Divider(height: 0, indent: 72),
+                          _buildProfileItem('E-posta', email, Icons.email, () {
+                            _showEditBottomSheet(
+                              title: 'E-posta',
+                              currentValue: email,
+                              onSave: (v) {
+                                setState(() => email = v);
+                                updateProfile('email', v);
+                              },
+                            );
+                          }),
+                          const Divider(height: 0, indent: 72),
+                          _buildProfileItem(
+                            'Şifre',
+                            '********',
+                            Icons.lock,
+                            _showEditPasswordSheet,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
-            Text(name, style: AppTextStyle.HEADING),
-            const SizedBox(height: 24),
-            Card(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              elevation: 4,
-              child: Column(
-                children: [
-                  _buildProfileItem('Kullanıcı Adı', name, Icons.person, () {
-                    _showEditBottomSheet(
-                      title: 'Kullanıcı Adı',
-                      currentValue: name,
-                      onSave: (v) {
-                        setState(() => name = v);
-                        updateProfile('name', v);
-                      },
-                    );
-                  }),
-                  const Divider(height: 0, indent: 72),
-                  _buildProfileItem('E-posta', email, Icons.email, () {
-                    _showEditBottomSheet(
-                      title: 'E-posta',
-                      currentValue: email,
-                      onSave: (v) {
-                        setState(() => email = v);
-                        updateProfile('email', v);
-                      },
-                    );
-                  }),
-                  const Divider(height: 0, indent: 72),
-                  _buildProfileItem('Şifre', '********', Icons.lock, _showEditPasswordSheet),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

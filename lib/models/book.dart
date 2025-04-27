@@ -6,7 +6,7 @@ class Book {
   final List<String> authors;
   final String thumbnailUrl;
   final String description;
-  final String? publishedDate;    // artık nullable
+  final String? publishedDate; // artık nullable
   final double? averageRating;
   final int? ratingsCount;
 
@@ -26,12 +26,20 @@ class Book {
     return Book(
       id: json['id'] as String,
       title: info['title'] as String? ?? '—',
-      authors: (info['authors'] as List<dynamic>?)?.cast<String>() ?? ['Bilinmeyen yazar'],
-      thumbnailUrl: (info['imageLinks'] != null && info['imageLinks']['thumbnail'] != null)
-          ? (info['imageLinks']['thumbnail'] as String).replaceFirst('http:', 'https:')
-          : '',
+      authors:
+          (info['authors'] as List<dynamic>?)?.cast<String>() ??
+          ['Bilinmeyen yazar'],
+      thumbnailUrl:
+          (info['imageLinks'] != null &&
+                  info['imageLinks']['thumbnail'] != null)
+              ? (info['imageLinks']['thumbnail'] as String).replaceFirst(
+                'http:',
+                'https:',
+              )
+              : '',
       description: info['description'] as String? ?? 'Açıklama bulunamadı.',
-      publishedDate: info['publishedDate'] as String?,  // nullable olarak alıyoruz
+      publishedDate:
+          info['publishedDate'] as String?, // nullable olarak alıyoruz
       averageRating: (info['averageRating'] as num?)?.toDouble(),
       ratingsCount: info['ratingsCount'] as int?,
     );
