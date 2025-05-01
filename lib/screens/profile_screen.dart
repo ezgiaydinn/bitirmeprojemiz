@@ -14,11 +14,8 @@ class ProfileScreen extends StatefulWidget {
   final String userId;
   final String name;
 
-  const ProfileScreen({
-    Key? key,
-    required this.userId,
-    required this.name,
-  }) : super(key: key);
+  const ProfileScreen({Key? key, required this.userId, required this.name})
+    : super(key: key);
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -41,8 +38,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _fetchProfile() async {
     const baseUrl = 'https://projembackend-production-4549.up.railway.app';
     try {
-      final response = await http
-          .get(Uri.parse('$baseUrl/api/auth/profile/${widget.userId}'));
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/auth/profile/${widget.userId}'),
+      );
       if (response.statusCode == 200) {
         final user = jsonDecode(response.body)['user'];
         setState(() {
@@ -64,13 +62,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => FavoritesScreen(
-              userId: widget.userId,
-              favoriteBooks: [],
-              onAddToLibrary: (_) {},
-              userRatings: {},
-              onRate: (_, __) {},
-            ),
+            builder:
+                (_) => FavoritesScreen(
+                  userId: widget.userId,
+                  favoriteBooks: [],
+                  onAddToLibrary: (_) {},
+                  userRatings: {},
+                  onRate: (_, __) {},
+                ),
           ),
         );
         break;
@@ -78,10 +77,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (_) => HomePageScreen(
-              name: widget.name,
-              userId: widget.userId,
-            ),
+            builder:
+                (_) => HomePageScreen(name: widget.name, userId: widget.userId),
           ),
         );
         break;
@@ -89,13 +86,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => LibraryScreen(
-              userId: widget.userId,
-              libraryBooks: [],
-              userRatings: {},
-              onRemoveFromLibrary: (_) {},
-              onRate: (_, __) {},
-            ),
+            builder:
+                (_) => LibraryScreen(
+                  userId: widget.userId,
+                  //libraryBooks: [],
+                  //userRatings: {},
+                  //onRemoveFromLibrary: (_) {},
+                  //onRate: (_, __) {},
+                ),
           ),
         );
         break;
@@ -110,122 +108,127 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     final headerHeight = h * 0.30;
     final avatarRadius = w * 0.15;
-    final padH         = w * 0.06;
-    final padVsmall    = h * 0.02;
-    final padVmedium   = h * 0.04;
+    final padH = w * 0.06;
+    final padVsmall = h * 0.02;
+    final padVmedium = h * 0.04;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
       body: SafeArea(
-        child: isLoading
-            ? Center(
-          child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation(AppColors.accent),
-          ),
-        )
-            : Column(
-          children: [
-            Container(
-              width: double.infinity,
-              height: headerHeight,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    AppColors.accent.withOpacity(0.8),
-                    AppColors.accent,
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(30),
-                  bottomRight: Radius.circular(30),
-                ),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircleAvatar(
-                    radius: avatarRadius,
-                    backgroundImage:
-                    const AssetImage('assets/images/avatar.png'),
+        child:
+            isLoading
+                ? Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation(AppColors.accent),
                   ),
-                  SizedBox(height: padVsmall),
-                  Text(
-                    name,
-                    style: AppTextStyle.HEADING.copyWith(
-                      color: Colors.white,
-                      fontSize: 22,
-                    ),
-                  ),
-                  SizedBox(height: padVsmall * 0.5),
-                  Text(
-                    email,
-                    style: AppTextStyle.BODY.copyWith(
-                      color: Colors.white70,
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: padVmedium),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: padH),
-              child: Card(
-                elevation: 4,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Column(
+                )
+                : Column(
                   children: [
-                    _buildTile(
-                      icon: Icons.edit,
-                      text: 'Profil Düzenle',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => EditProfileScreen(
-                                userId: widget.userId),
+                    Container(
+                      width: double.infinity,
+                      height: headerHeight,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.accent.withOpacity(0.8),
+                            AppColors.accent,
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(30),
+                          bottomRight: Radius.circular(30),
+                        ),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          CircleAvatar(
+                            radius: avatarRadius,
+                            backgroundImage: const AssetImage(
+                              'assets/images/avatar.png',
+                            ),
                           ),
-                        );
-                      },
+                          SizedBox(height: padVsmall),
+                          Text(
+                            name,
+                            style: AppTextStyle.HEADING.copyWith(
+                              color: Colors.white,
+                              fontSize: 22,
+                            ),
+                          ),
+                          SizedBox(height: padVsmall * 0.5),
+                          Text(
+                            email,
+                            style: AppTextStyle.BODY.copyWith(
+                              color: Colors.white70,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    const Divider(height: 0, indent: 72),
-                    _buildTile(
-                      icon: Icons.settings,
-                      text: 'Ayarlar',
-                      onTap: () {},
+                    SizedBox(height: padVmedium),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: padH),
+                      child: Card(
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Column(
+                          children: [
+                            _buildTile(
+                              icon: Icons.edit,
+                              text: 'Profil Düzenle',
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (_) => EditProfileScreen(
+                                          userId: widget.userId,
+                                        ),
+                                  ),
+                                );
+                              },
+                            ),
+                            const Divider(height: 0, indent: 72),
+                            _buildTile(
+                              icon: Icons.settings,
+                              text: 'Ayarlar',
+                              onTap: () {},
+                            ),
+                            const Divider(height: 0, indent: 72),
+                            _buildTile(
+                              icon: Icons.help_outline,
+                              text: 'Yardım',
+                              onTap: () {},
+                            ),
+                            const Divider(height: 0, indent: 72),
+                            _buildTile(
+                              icon: Icons.logout,
+                              text: 'Çıkış Yap',
+                              iconColor: AppColors.logoPink,
+                              textColor: AppColors.logoPink,
+                              onTap: () {
+                                Navigator.pushAndRemoveUntil(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const LoginScreen(),
+                                  ),
+                                  (route) => false,
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                    const Divider(height: 0, indent: 72),
-                    _buildTile(
-                      icon: Icons.help_outline,
-                      text: 'Yardım',
-                      onTap: () {},
-                    ),
-                    const Divider(height: 0, indent: 72),
-                    _buildTile(
-                      icon: Icons.logout,
-                      text: 'Çıkış Yap',
-                      iconColor: AppColors.logoPink,
-                      textColor: AppColors.logoPink,
-                      onTap: () {
-                        Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => const LoginScreen()),
-                              (route) => false,
-                        );
-                      },
-                    ),
+                    SizedBox(height: padVmedium),
                   ],
                 ),
-              ),
-            ),
-            SizedBox(height: padVmedium),
-          ],
-        ),
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
@@ -238,10 +241,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             icon: Icon(Icons.favorite),
             label: 'Favoriler',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Ana Sayfa',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Ana Sayfa'),
           BottomNavigationBarItem(
             icon: Icon(Icons.library_books),
             label: 'Kütüphane',
