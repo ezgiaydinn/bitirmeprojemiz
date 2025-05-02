@@ -1,4 +1,5 @@
 // lib/screens/home_page.dart
+
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -18,8 +19,11 @@ class HomePageScreen extends StatefulWidget {
   final String name;
   final String userId;
 
-  const HomePageScreen({Key? key, required this.name, required this.userId})
-    : super(key: key);
+  const HomePageScreen({
+    Key? key,
+    required this.name,
+    required this.userId,
+  }) : super(key: key);
 
   @override
   State<HomePageScreen> createState() => _HomePageScreenState();
@@ -37,11 +41,11 @@ class _HomePageScreenState extends State<HomePageScreen> {
   @override
   void initState() {
     super.initState();
-    _loadUserData(); // ① Kullanıcı verilerini çek
+    _loadUserData(); // Kullanıcı verilerini çek
     _futureBooks = null; // Başlangıçta kitap arama yok
   }
 
-  /// ① Kullanıcının favori ve rating listelerini backend’den çeker
+  /// Kullanıcının favori ve rating listelerini backend’den çeker
   Future<void> _loadUserData() async {
     try {
       // --- Favoriler ---
@@ -51,10 +55,11 @@ class _HomePageScreenState extends State<HomePageScreen> {
       if (favRes.statusCode == 200) {
         final List data = jsonDecode(favRes.body);
         setState(() {
-          _favoriteBooks.clear();
-          _favoriteBooks.addAll(
-            data.map((e) => Book.fromJson(e as Map<String, dynamic>)),
-          );
+          _favoriteBooks
+            ..clear()
+            ..addAll(
+              data.map((e) => Book.fromJson(e as Map<String, dynamic>)),
+            );
         });
       }
 
@@ -86,25 +91,25 @@ class _HomePageScreenState extends State<HomePageScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder:
-              (_) => FavoritesScreen(
-                userId: widget.userId,
-                favoriteBooks: _favoriteBooks,
-                onAddToLibrary: (b) {
-                  setState(() {
-                    _favoriteBooks.removeWhere((x) => x.id == b.id);
-                    _libraryBooks.add(b);
-                  });
-                },
-                userRatings: _userRatings,
-                onRate: (b, r) => setState(() => _userRatings[b.id] = r),
-              ),
+          builder: (_) => FavoritesScreen(
+            userId: widget.userId,
+            onAddToLibrary: (b) {
+              setState(() {
+                _favoriteBooks.removeWhere((x) => x.id == b.id);
+                _libraryBooks.add(b);
+              });
+            },
+            userRatings: _userRatings,
+            onRate: (b, r) => setState(() => _userRatings[b.id] = r),
+          ),
         ),
       ).then((_) => setState(() => _selectedIndex = 1));
     } else if (index == 2) {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => LibraryScreen(userId: widget.userId)),
+        MaterialPageRoute(
+          builder: (_) => LibraryScreen(userId: widget.userId),
+        ),
       ).then((_) => setState(() => _selectedIndex = 1));
     }
   }
@@ -127,49 +132,46 @@ class _HomePageScreenState extends State<HomePageScreen> {
         child: DefaultTabController(
           length: 1,
           child: NestedScrollView(
-            headerSliverBuilder:
-                (_, __) => [
-                  SliverAppBar(
-                    backgroundColor: AppColors.accent,
-                    expandedHeight: headerHeight,
-                    pinned: true,
-                    flexibleSpace: FlexibleSpaceBar(
-                      collapseMode: CollapseMode.pin,
-                      title: Text(
-                        'Merhaba, ${widget.name}!',
-                        style: AppTextStyle.BODY.copyWith(color: Colors.white),
+            headerSliverBuilder: (_, __) => [
+              SliverAppBar(
+                backgroundColor: AppColors.accent,
+                expandedHeight: headerHeight,
+                pinned: true,
+                flexibleSpace: FlexibleSpaceBar(
+                  collapseMode: CollapseMode.pin,
+                  title: Text(
+                    'Merhaba, ${widget.name}!',
+                    style: AppTextStyle.BODY.copyWith(color: Colors.white),
+                  ),
+                  background: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.accent.withOpacity(0.8),
+                          AppColors.accent,
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
-                      background: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              AppColors.accent.withOpacity(0.8),
-                              AppColors.accent,
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
+                    ),
+                  ),
+                ),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.person, color: Colors.white),
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ProfileScreen(
+                          name: widget.name,
+                          userId: widget.userId,
                         ),
                       ),
                     ),
-                    actions: [
-                      IconButton(
-                        icon: const Icon(Icons.person, color: Colors.white),
-                        onPressed:
-                            () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (_) => ProfileScreen(
-                                      name: widget.name,
-                                      userId: widget.userId,
-                                    ),
-                              ),
-                            ),
-                      ),
-                    ],
                   ),
                 ],
+              ),
+            ],
             body: Column(
               children: [
                 // Arama kutusu
@@ -199,49 +201,49 @@ class _HomePageScreenState extends State<HomePageScreen> {
 
                 // İçerik
                 Expanded(
-                  child:
-                      _futureBooks == null
-                          ? Center(
-                            child: Text(
-                              'Bir kitap arayın...',
-                              style: AppTextStyle.BODY,
-                            ),
-                          )
-                          : FutureBuilder<List<Book>>(
-                            future: _futureBooks,
-                            builder: (ctx, snap) {
-                              if (snap.connectionState !=
-                                  ConnectionState.done) {
-                                return const Center(
-                                  child: CircularProgressIndicator(),
-                                );
-                              }
-                              if (snap.hasError) {
-                                return Center(
-                                  child: Text(
-                                    'Hata: ${snap.error}',
-                                    style: AppTextStyle.BODY,
-                                  ),
-                                );
-                              }
-                              final books = snap.data ?? [];
-                              return GridView.builder(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: w * 0.05,
-                                  vertical: h * 0.02,
-                                ),
-                                gridDelegate:
-                                    SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: 2,
-                                      crossAxisSpacing: w * 0.05,
-                                      mainAxisSpacing: h * 0.02,
-                                      childAspectRatio: 0.6,
-                                    ),
-                                itemCount: books.length,
-                                itemBuilder: (_, i) => _buildBookCard(books[i]),
-                              );
-                            },
+                  child: _futureBooks == null
+                      ? Center(
+                    child: Text(
+                      'Bir kitap arayın...',
+                      style: AppTextStyle.BODY,
+                    ),
+                  )
+                      : FutureBuilder<List<Book>>(
+                    future: _futureBooks,
+                    builder: (ctx, snap) {
+                      if (snap.connectionState !=
+                          ConnectionState.done) {
+                        return const Center(
+                          child: CircularProgressIndicator(),
+                        );
+                      }
+                      if (snap.hasError) {
+                        return Center(
+                          child: Text(
+                            'Hata: ${snap.error}',
+                            style: AppTextStyle.BODY,
                           ),
+                        );
+                      }
+                      final books = snap.data ?? [];
+                      return GridView.builder(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: w * 0.05,
+                          vertical: h * 0.02,
+                        ),
+                        gridDelegate:
+                        SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: w * 0.05,
+                          mainAxisSpacing: h * 0.02,
+                          childAspectRatio: 0.6,
+                        ),
+                        itemCount: books.length,
+                        itemBuilder: (_, i) =>
+                            _buildBookCard(books[i]),
+                      );
+                    },
+                  ),
                 ),
               ],
             ),
@@ -276,41 +278,41 @@ class _HomePageScreenState extends State<HomePageScreen> {
     final rating = _userRatings[book.id] ?? 0;
 
     return GestureDetector(
-      onTap:
-          () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (_) => BookDetailScreen(
-                    userId: widget.userId,
-                    book: book,
-                    isFavorite: isFav,
-                    isInLibrary: inLib,
-                    userRating: rating,
-                    onToggleFavorite: (b) {
-                      setState(() {
-                        if (isFav)
-                          _favoriteBooks.removeWhere((x) => x.id == b.id);
-                        else
-                          _favoriteBooks.add(b);
-                      });
-                    },
-                    onToggleLibrary: (b) {
-                      setState(() {
-                        if (inLib) {
-                          _libraryBooks.removeWhere((x) => x.id == b.id);
-                          _userRatings.remove(b.id);
-                        } else {
-                          _libraryBooks.add(b);
-                        }
-                      });
-                    },
-                    onRate: (b, r) => setState(() => _userRatings[b.id] = r),
-                  ),
-            ),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => BookDetailScreen(
+            userId: widget.userId,
+            book: book,
+            isFavorite: isFav,
+            isInLibrary: inLib,
+            userRating: rating,
+            onToggleFavorite: (b) {
+              setState(() {
+                if (isFav)
+                  _favoriteBooks.removeWhere((x) => x.id == b.id);
+                else
+                  _favoriteBooks.add(b);
+              });
+            },
+            onToggleLibrary: (b) {
+              setState(() {
+                if (inLib) {
+                  _libraryBooks.removeWhere((x) => x.id == b.id);
+                  _userRatings.remove(b.id);
+                } else {
+                  _libraryBooks.add(b);
+                }
+              });
+            },
+            onRate: (b, r) => setState(() => _userRatings[b.id] = r),
           ),
+        ),
+      ),
       child: Card(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
         elevation: 6,
         margin: const EdgeInsets.all(8),
         child: Column(
@@ -321,14 +323,16 @@ class _HomePageScreenState extends State<HomePageScreen> {
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(16),
                 ),
-                child:
-                    book.thumbnailUrl.isNotEmpty
-                        ? Image.network(book.thumbnailUrl, fit: BoxFit.cover)
-                        : const Icon(Icons.book, size: 80, color: Colors.grey),
+                child: book.thumbnailUrl.isNotEmpty
+                    ? Image.network(book.thumbnailUrl,
+                    fit: BoxFit.cover)
+                    : const Icon(Icons.book,
+                    size: 80, color: Colors.grey),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding:
+              const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               child: Text(
                 book.title,
                 style: AppTextStyle.BODY,
@@ -389,11 +393,10 @@ class _HomePageScreenState extends State<HomePageScreen> {
               'Çıkış Yap',
               style: AppTextStyle.BODY.copyWith(color: AppColors.logoPink),
             ),
-            onTap:
-                () => Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                ),
+            onTap: () => Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const LoginScreen()),
+            ),
           ),
         ],
       ),

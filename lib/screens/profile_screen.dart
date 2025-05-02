@@ -1,4 +1,5 @@
 // lib/screens/profile_screen.dart
+
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -14,8 +15,11 @@ class ProfileScreen extends StatefulWidget {
   final String userId;
   final String name;
 
-  const ProfileScreen({Key? key, required this.userId, required this.name})
-    : super(key: key);
+  const ProfileScreen({
+    Key? key,
+    required this.userId,
+    required this.name,
+  }) : super(key: key);
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -49,7 +53,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         });
       }
     } catch (_) {
-      // ignore
+      // ignore errors
     } finally {
       setState(() => isLoading = false);
     }
@@ -62,14 +66,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder:
-                (_) => FavoritesScreen(
-                  userId: widget.userId,
-                  favoriteBooks: [],
-                  onAddToLibrary: (_) {},
-                  userRatings: {},
-                  onRate: (_, __) {},
-                ),
+            builder: (_) => FavoritesScreen(
+              userId: widget.userId,
+              onAddToLibrary: (_) {},
+              userRatings: {},
+              onRate: (_, __) {},
+            ),
           ),
         );
         break;
@@ -77,8 +79,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder:
-                (_) => HomePageScreen(name: widget.name, userId: widget.userId),
+            builder: (_) => HomePageScreen(
+              name: widget.name,
+              userId: widget.userId,
+            ),
           ),
         );
         break;
@@ -86,14 +90,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder:
-                (_) => LibraryScreen(
-                  userId: widget.userId,
-                  //libraryBooks: [],
-                  //userRatings: {},
-                  //onRemoveFromLibrary: (_) {},
-                  //onRate: (_, __) {},
-                ),
+            builder: (_) => LibraryScreen(userId: widget.userId),
           ),
         );
         break;
@@ -115,120 +112,128 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
       body: SafeArea(
-        child:
-            isLoading
-                ? Center(
-                  child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation(AppColors.accent),
+        child: isLoading
+            ? Center(
+          child: CircularProgressIndicator(
+            valueColor:
+            AlwaysStoppedAnimation(AppColors.accent),
+          ),
+        )
+            : Column(
+          children: [
+            Container(
+              width: double.infinity,
+              height: headerHeight,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.accent.withOpacity(0.8),
+                    AppColors.accent,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(30),
+                  bottomRight: Radius.circular(30),
+                ),
+              ),
+              child: Column(
+                mainAxisAlignment:
+                MainAxisAlignment.center,
+                children: [
+                  CircleAvatar(
+                    radius: avatarRadius,
+                    backgroundImage: const AssetImage(
+                      'assets/images/avatar.png',
+                    ),
                   ),
-                )
-                : Column(
+                  SizedBox(height: padVsmall),
+                  Text(
+                    name,
+                    style: AppTextStyle.HEADING.copyWith(
+                      color: Colors.white,
+                      fontSize: 22,
+                    ),
+                  ),
+                  SizedBox(height: padVsmall * 0.5),
+                  Text(
+                    email,
+                    style: AppTextStyle.BODY.copyWith(
+                      color: Colors.white70,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: padVmedium),
+            Padding(
+              padding: EdgeInsets.symmetric(
+                  horizontal: padH),
+              child: Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(
+                  borderRadius:
+                  BorderRadius.circular(20),
+                ),
+                child: Column(
                   children: [
-                    Container(
-                      width: double.infinity,
-                      height: headerHeight,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            AppColors.accent.withOpacity(0.8),
-                            AppColors.accent,
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: const BorderRadius.only(
-                          bottomLeft: Radius.circular(30),
-                          bottomRight: Radius.circular(30),
-                        ),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          CircleAvatar(
-                            radius: avatarRadius,
-                            backgroundImage: const AssetImage(
-                              'assets/images/avatar.png',
-                            ),
+                    _buildTile(
+                      icon: Icons.edit,
+                      text: 'Profil Düzenle',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                EditProfileScreen(
+                                  userId: widget.userId,
+                                ),
                           ),
-                          SizedBox(height: padVsmall),
-                          Text(
-                            name,
-                            style: AppTextStyle.HEADING.copyWith(
-                              color: Colors.white,
-                              fontSize: 22,
-                            ),
-                          ),
-                          SizedBox(height: padVsmall * 0.5),
-                          Text(
-                            email,
-                            style: AppTextStyle.BODY.copyWith(
-                              color: Colors.white70,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
+                        );
+                      },
                     ),
-                    SizedBox(height: padVmedium),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: padH),
-                      child: Card(
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Column(
-                          children: [
-                            _buildTile(
-                              icon: Icons.edit,
-                              text: 'Profil Düzenle',
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder:
-                                        (_) => EditProfileScreen(
-                                          userId: widget.userId,
-                                        ),
-                                  ),
-                                );
-                              },
-                            ),
-                            const Divider(height: 0, indent: 72),
-                            _buildTile(
-                              icon: Icons.settings,
-                              text: 'Ayarlar',
-                              onTap: () {},
-                            ),
-                            const Divider(height: 0, indent: 72),
-                            _buildTile(
-                              icon: Icons.help_outline,
-                              text: 'Yardım',
-                              onTap: () {},
-                            ),
-                            const Divider(height: 0, indent: 72),
-                            _buildTile(
-                              icon: Icons.logout,
-                              text: 'Çıkış Yap',
-                              iconColor: AppColors.logoPink,
-                              textColor: AppColors.logoPink,
-                              onTap: () {
-                                Navigator.pushAndRemoveUntil(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const LoginScreen(),
-                                  ),
-                                  (route) => false,
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
+                    const Divider(
+                        height: 0, indent: 72),
+                    _buildTile(
+                      icon: Icons.settings,
+                      text: 'Ayarlar',
+                      onTap: () {},
                     ),
-                    SizedBox(height: padVmedium),
+                    const Divider(
+                        height: 0, indent: 72),
+                    _buildTile(
+                      icon: Icons.help_outline,
+                      text: 'Yardım',
+                      onTap: () {},
+                    ),
+                    const Divider(
+                        height: 0, indent: 72),
+                    _buildTile(
+                      icon: Icons.logout,
+                      text: 'Çıkış Yap',
+                      iconColor: AppColors.logoPink,
+                      textColor:
+                      AppColors.logoPink,
+                      onTap: () {
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                            const LoginScreen(),
+                          ),
+                              (route) => false,
+                        );
+                      },
+                    ),
                   ],
                 ),
+              ),
+            ),
+            SizedBox(height: padVmedium),
+          ],
+        ),
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
@@ -241,7 +246,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             icon: Icon(Icons.favorite),
             label: 'Favoriler',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Ana Sayfa'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Ana Sayfa',
+          ),
           BottomNavigationBarItem(
             icon: Icon(Icons.library_books),
             label: 'Kütüphane',
@@ -258,10 +266,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     Color? textColor,
     required VoidCallback onTap,
   }) {
-    final horizontalPadding = MediaQuery.of(context).size.width * 0.05;
+    final horizontalPadding =
+        MediaQuery.of(context).size.width * 0.05;
     return ListTile(
-      contentPadding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-      leading: Icon(icon, color: iconColor ?? AppColors.accent),
+      contentPadding:
+      EdgeInsets.symmetric(horizontal: horizontalPadding),
+      leading:
+      Icon(icon, color: iconColor ?? AppColors.accent),
       title: Text(
         text,
         style: AppTextStyle.BODY.copyWith(
@@ -279,3 +290,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 }
+
+
+
+
