@@ -12,15 +12,25 @@ const String baseUrl = 'https://projembackend-production-4549.up.railway.app';
 
 class LibraryScreen extends StatefulWidget {
   final String userId;
+  final Map<String, int> userRatings;
+  final void Function(Book) onRemoveFromLibrary;
+  final void Function(Book, int) onRate;
 
-  const LibraryScreen({Key? key, required this.userId}) : super(key: key);
+  const LibraryScreen({
+    Key? key,
+    required this.userId,
+    required this.userRatings,
+    required this.onRemoveFromLibrary,
+    required this.onRate,
+  }) : super(key: key);
 
   @override
   State<LibraryScreen> createState() => _LibraryScreenState();
 }
 
 class _LibraryScreenState extends State<LibraryScreen> {
-  late Future<List<Book>> _futureLibrary;
+  List<Book> _library = [];
+  bool _loading = false;
 
   @override
   void initState() {
@@ -28,156 +38,178 @@ class _LibraryScreenState extends State<LibraryScreen> {
     _loadLibrary();
   }
 
-  void _loadLibrary() {
-    _futureLibrary = _fetchLibrary();
-  }
-
-  Future<List<Book>> _fetchLibrary() async {
-    final url = Uri.parse('$baseUrl/api/library/${widget.userId}');
-    final res = await http.get(url);
-    if (res.statusCode == 200) {
-      final List data = jsonDecode(res.body) as List;
-      return data.map((e) => Book.fromJson(e as Map<String, dynamic>)).toList();
-    } else {
-      throw Exception('Kütüphane çekilemedi: ${res.statusCode}');
+  Future<void> _loadLibrary() async {
+    setState(() => _loading = true);
+    try {
+      final url = Uri.parse('$baseUrl/api/library/${widget.userId}');
+      final res = await http.get(url);
+      if (res.statusCode == 200) {
+        final List data = jsonDecode(res.body);
+        setState(() {
+          _library = data.map((e) {
+            // e bir Map<String,dynamic> ve bizim endpoint şu alanları döndürüyor:
+            // id, title, authors (dizi), thumbnailUrl, description?, publisher?, vs.
+            return Book(
+              id: e['id'] as String,
+              title: e['title'] as String,
+              authors: List<String>.from(e['authors'] ?? []),
+              thumbnailUrl: e['thumbnailUrl'] as String? ?? '',
+              description: e['description'] as String? ?? 'Açıklama yok.',
+              publisher: e['publisher'] as String?,
+              publishedDate: e['publishedDate'] as String?,
+              pageCount: e['pageCount'] as int?,
+              industryIdentifiers: null,
+              averageRating: null,
+              ratingsCount: null,
+            );
+          }).toList();
+        });
+      } else {
+        debugPrint('Kütüphane yüklenemedi: ${res.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Kütüphane yüklerken hata: $e');
+    } finally {
+      setState(() => _loading = false);
     }
   }
 
+
   Future<void> _removeFromLibrary(Book book) async {
     final url = Uri.parse('$baseUrl/api/library/remove');
-    final res = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'userId': widget.userId, 'bookId': book.id}),
-    );
-
-    if (res.statusCode == 200) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('“${book.title}” kütüphaneden çıkarıldı.')),
+    try {
+      final res = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'userId': widget.userId,
+          'bookId': book.id,
+        }),
       );
-      // Listeyi yenile
-      setState(() => _loadLibrary());
-    } else {
+      if (res.statusCode == 200) {
+        widget.onRemoveFromLibrary(book);
+        await _loadLibrary();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('\"${book.title}\" kütüphaneden çıkarıldı!')),
+        );
+      } else {
+        debugPrint('Çıkarma başarısız: ${res.body}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Çıkarma başarısız oldu 😕')),
+        );
+      }
+    } catch (e) {
+      debugPrint('Sunucuya bağlanılamadı ❌: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Silme başarısız: ${res.statusCode}')),
+        const SnackBar(content: Text('Sunucu hatası 😕')),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Kütüphanen',
-          style: AppTextStyle.HEADING.copyWith(color: AppColors.white),
-        ),
-        backgroundColor: AppColors.accent,
-      ),
-      body: FutureBuilder<List<Book>>(
-        future: _futureLibrary,
-        builder: (ctx, snap) {
-          if (snap.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snap.hasError) {
-            return Center(child: Text('Hata: ${snap.error}'));
-          }
-
-          final books = snap.data!;
-          if (books.isEmpty) {
-            return Center(
-              child: Text(
-                'Kütüphanen boş 😊',
-                style: AppTextStyle.BODY.copyWith(fontSize: 18),
-              ),
-            );
-          }
-
-          return ListView.separated(
-            padding: const EdgeInsets.all(12),
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemCount: books.length,
-            itemBuilder: (ctx, i) {
-              final b = books[i];
-              return Card(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 4,
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-
-                  /// —— Favoriler ekranındaki gibi kitap görseli ——
-                  leading:
-                      b.thumbnailUrl.isNotEmpty
-                          ? ClipRRect(
-                            borderRadius: BorderRadius.circular(6),
-                            child: Image.network(
-                              b.thumbnailUrl,
-                              width: 50,
-                              height: 70,
-                              fit: BoxFit.cover,
-                            ),
-                          )
-                          : Icon(
-                            Icons.menu_book,
-                            size: 50,
-                            color: AppColors.accent,
-                          ),
-
-                  /// —— Başlık ——
-                  title: Text(
-                    b.title.isNotEmpty ? b.title : 'Başlıksız kitap',
-                    style: AppTextStyle.BODY.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-
-                  /// —— Yazar ——
-                  subtitle:
-                      b.authors.isNotEmpty
-                          ? Text(
-                            b.authors.join(', '),
-                            style: AppTextStyle.MINI_DEFAULT_DESCRIPTION_TEXT
-                                .copyWith(fontWeight: FontWeight.w500),
-                          )
-                          : null,
-
-                  /// —— Silme tuşu ——
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: () => _removeFromLibrary(b),
-                  ),
-
-                  /// —— Detay sayfasına git ——
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (_) => BookDetailScreen(
-                              userId: widget.userId,
-                              book: b,
-                              isFavorite: false,
-                              isInLibrary: true,
-                              userRating: 0,
-                              onToggleFavorite: (_) {},
-                              onToggleLibrary: (_) {},
-                              onRate: (_, __) {},
-                            ),
+    return Stack(
+      children: [
+        Scaffold(
+          appBar: AppBar(
+            backgroundColor: AppColors.accent,
+            elevation: 0,
+            title: Text('Kütüphane',
+                style: AppTextStyle.HEADING.copyWith(color: Colors.white)),
+          ),
+          body: _library.isEmpty && !_loading
+              ? Center(
+            child: Text(
+              'Kütüphanenizde kitap yok 😊',
+              style: AppTextStyle.BODY.copyWith(fontSize: 18),
+              textAlign: TextAlign.center,
+            ),
+          )
+              : Padding(
+            padding:
+            const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+            child: ListView.separated(
+              itemCount: _library.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              itemBuilder: (ctx, i) {
+                final b = _library[i];
+                final rating = widget.userRatings[b.id] ?? 0;
+                return Card(
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  elevation: 4,
+                  child: ListTile(
+                    leading: b.thumbnailUrl.isNotEmpty
+                        ? ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: Image.network(
+                        b.thumbnailUrl,
+                        width: 50,
+                        height: 70,
+                        fit: BoxFit.cover,
                       ),
-                    ).then((_) => setState(() => _loadLibrary()));
-                  },
-                ),
-              );
-            },
-          );
-        },
-      ),
+                    )
+                        : const Icon(Icons.menu_book,
+                        size: 50, color: Colors.grey),
+                    title: Text(b.title,
+                        style: AppTextStyle.BODY.copyWith(
+                            fontWeight: FontWeight.w600)),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(b.authors.join(', '),
+                            style: AppTextStyle
+                                .MINI_DEFAULT_DESCRIPTION_TEXT),
+                        if (rating > 0) ...[
+                          const SizedBox(height: 4),
+                          Row(
+                            children: List.generate(
+                              rating,
+                                  (_) => Icon(Icons.star,
+                                  size: 12, color: AppColors.logoPink),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    trailing: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.accent,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                      ),
+                      icon: const Icon(Icons.delete, size: 18),
+                      label: const Text('Çıkar'),
+                      onPressed: () => _removeFromLibrary(b),
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => BookDetailScreen(
+                            userId: widget.userId,
+                            book: b,
+                            isFavorite: false,
+                            isInLibrary: true,
+                            userRating: rating,
+                            onToggleFavorite: (_) {},
+                            onToggleLibrary: (_) {},
+                            onRate: widget.onRate,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+        if (_loading)
+          Container(
+              color: Colors.black38,
+              child: const Center(child: CircularProgressIndicator())),
+      ],
     );
   }
 }

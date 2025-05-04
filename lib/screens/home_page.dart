@@ -104,14 +104,33 @@ class _HomePageScreenState extends State<HomePageScreen> {
           ),
         ),
       ).then((_) => setState(() => _selectedIndex = 1));
+// lib/screens/home_page.dart içinden…
+
     } else if (index == 2) {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => LibraryScreen(userId: widget.userId),
+          builder: (_) => LibraryScreen(
+            userId: widget.userId,
+            userRatings: _userRatings,
+            // Kütüphanede puanlama yapıldığında:
+            onRate: (book, rating) {
+              setState(() {
+                _userRatings[book.id] = rating;
+              });
+            },
+            // Kütüphaneden çıkarma butonuna basıldığında:
+            onRemoveFromLibrary: (book) {
+              setState(() {
+                _libraryBooks.removeWhere((b) => b.id == book.id);
+                _userRatings.remove(book.id);
+              });
+            },
+          ),
         ),
       ).then((_) => setState(() => _selectedIndex = 1));
     }
+
   }
 
   @override

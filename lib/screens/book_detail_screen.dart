@@ -143,30 +143,29 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
   void _showRatingDialog() {
     showDialog(
       context: context,
-      builder:
-          (_) => AlertDialog(
-            backgroundColor: AppColors.white,
-            title: Text('Puanını Seç', style: AppTextStyle.HEADING),
-            content: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(5, (i) {
-                final idx = i + 1;
-                return IconButton(
-                  splashRadius: 24,
-                  icon: Icon(
-                    idx <= _currRating ? Icons.star : Icons.star_border,
-                    color: Colors.amber,
-                  ),
-                  onPressed: () {
-                    widget.onRate(widget.book, idx);
-                    setState(() => _currRating = idx);
-                    saveRating(idx);
-                    Navigator.pop(context);
-                  },
-                );
-              }),
-            ),
-          ),
+      builder: (_) => AlertDialog(
+        backgroundColor: AppColors.white,
+        title: Text('Puanını Seç', style: AppTextStyle.HEADING),
+        content: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(5, (i) {
+            final idx = i + 1;
+            return IconButton(
+              splashRadius: 24,
+              icon: Icon(
+                idx <= _currRating ? Icons.star : Icons.star_border,
+                color: Colors.amber,
+              ),
+              onPressed: () {
+                widget.onRate(widget.book, idx);
+                setState(() => _currRating = idx);
+                saveRating(idx);
+                Navigator.pop(context);
+              },
+            );
+          }),
+        ),
+      ),
     );
   }
 
@@ -182,14 +181,14 @@ https://books.google.com/books?id=${b.id}
       await Share.share(
         msg,
         sharePositionOrigin:
-            box != null ? box.localToGlobal(Offset.zero) & box.size : Rect.zero,
+        box != null ? box.localToGlobal(Offset.zero) & box.size : Rect.zero,
       );
     } catch (e) {
       debugPrint('Share error: $e');
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Paylaşım açılamadı 😕')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Paylaşım açılamadı 😕')),
+        );
       }
     }
   }
@@ -200,25 +199,27 @@ https://books.google.com/books?id=${b.id}
     required String label,
     required VoidCallback onTap,
     bool enabled = true,
-  }) => InkWell(
-    onTap: enabled ? onTap : null,
-    child: Column(
-      children: [
-        Icon(
-          icon,
-          color: enabled ? AppColors.white : AppColors.white.withAlpha(120),
-          size: 24,
+  }) =>
+      InkWell(
+        onTap: enabled ? onTap : null,
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              color: enabled ? AppColors.white : AppColors.white.withAlpha(120),
+              size: 24,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: AppTextStyle.MINI_DEFAULT_DESCRIPTION_TEXT.copyWith(
+                color:
+                enabled ? AppColors.white : AppColors.white.withAlpha(120),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: AppTextStyle.MINI_DEFAULT_DESCRIPTION_TEXT.copyWith(
-            color: enabled ? AppColors.white : AppColors.white.withAlpha(120),
-          ),
-        ),
-      ],
-    ),
-  );
+      );
 
   Widget _userRatingView() {
     if (!_inLib || _currRating == 0) return const SizedBox.shrink();
@@ -230,7 +231,7 @@ https://books.google.com/books?id=${b.id}
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(
               5,
-              (i) => Icon(
+                  (i) => Icon(
                 i < _currRating ? Icons.star : Icons.star_border,
                 color: Colors.amber,
                 size: 24,
@@ -306,35 +307,33 @@ https://books.google.com/books?id=${b.id}
             ),
           ),
           SafeArea(
-            // AppBar eklendiği için SafeArea'ın child'ı aşağıya kaydı ama
-            // padding ve boyutlar aynı kaldı.
             child: Column(
               children: [
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: EdgeInsets.symmetric(vertical: size.height * 0.02),
+                    padding:
+                    EdgeInsets.symmetric(vertical: size.height * 0.02),
                     child: Column(
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
-                          child:
-                              b.thumbnailUrl.isNotEmpty
-                                  ? Image.network(
-                                    b.thumbnailUrl,
-                                    width: coverW,
-                                    height: coverH,
-                                    fit: BoxFit.cover,
-                                  )
-                                  : Container(
-                                    width: coverW,
-                                    height: coverH,
-                                    color: AppColors.greyMedium,
-                                    child: const Icon(
-                                      Icons.menu_book,
-                                      size: 48,
-                                      color: AppColors.white,
-                                    ),
-                                  ),
+                          child: b.thumbnailUrl.isNotEmpty
+                              ? Image.network(
+                            b.thumbnailUrl,
+                            width: coverW,
+                            height: coverH,
+                            fit: BoxFit.cover,
+                          )
+                              : Container(
+                            width: coverW,
+                            height: coverH,
+                            color: AppColors.greyMedium,
+                            child: const Icon(
+                              Icons.menu_book,
+                              size: 48,
+                              color: AppColors.white,
+                            ),
+                          ),
                         ),
                         SizedBox(height: size.height * 0.025),
                         Padding(
@@ -344,9 +343,8 @@ https://books.google.com/books?id=${b.id}
                           child: Text(
                             b.title,
                             textAlign: TextAlign.center,
-                            style: AppTextStyle.HEADING.copyWith(
-                              color: AppColors.white,
-                            ),
+                            style:
+                            AppTextStyle.HEADING.copyWith(color: AppColors.white),
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -365,37 +363,79 @@ https://books.google.com/books?id=${b.id}
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               _actionButton(
-                                icon:
-                                    _isFav
-                                        ? Icons.favorite
-                                        : Icons.favorite_border,
+                                icon: _isFav ? Icons.favorite : Icons.favorite_border,
                                 label: _isFav ? 'Favoriden' : 'Favori',
                                 onTap: () async {
                                   setState(() => _isFav = !_isFav);
-
                                   if (_isFav) {
-                                    //  → favoriye ekleme
                                     await saveFavoriteBook();
                                   } else {
-                                    //  ← favoriden çıkarma
                                     await deleteFavoriteBook();
                                   }
-                                  // ebeveyne de bildir:
                                   widget.onToggleFavorite(b);
                                 },
                               ),
                               _actionButton(
-                                icon:
-                                    _inLib
-                                        ? Icons.library_books
-                                        : Icons.library_add,
+                                icon: _inLib ? Icons.library_books : Icons.library_add,
                                 label: _inLib ? 'Kütüphaneden' : 'Kütüphaneye',
-                                onTap: () {
-                                  widget.onToggleLibrary(b);
-                                  setState(() {
-                                    _inLib = !_inLib;
-                                    if (!_inLib) _currRating = 0;
-                                  });
+                                onTap: () async {
+                                  if (_inLib) {
+                                    // mevcut kütüphaneden çıkarma
+                                    final url = Uri.parse(
+                                      'https://projembackend-production-4549.up.railway.app/api/library/remove',
+                                    );
+                                    final res = await http.post(
+                                      url,
+                                      headers: {'Content-Type': 'application/json'},
+                                      body: jsonEncode({
+                                        'userId': widget.userId,
+                                        'bookId': widget.book.id,
+                                      }),
+                                    );
+                                    if (res.statusCode == 200) {
+                                      widget.onToggleLibrary(b);
+                                      setState(() => _inLib = false);
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('\"${b.title}\" kütüphaneden çıkarıldı!'),
+                                        ),
+                                      );
+                                    } else {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Çıkarma başarısız oldu 😕'),
+                                        ),
+                                      );
+                                    }
+                                  } else {
+                                    // **Burayı değiştirdik:** kütüphaneye ekleme
+                                    final url = Uri.parse(
+                                      'https://projembackend-production-4549.up.railway.app/api/favorite-to-library',
+                                    );
+                                    final res = await http.post(
+                                      url,
+                                      headers: {'Content-Type': 'application/json'},
+                                      body: jsonEncode({
+                                        'userId': widget.userId,
+                                        'bookId': widget.book.id,
+                                      }),
+                                    );
+                                    if (res.statusCode == 200) {
+                                      widget.onToggleLibrary(b);
+                                      setState(() => _inLib = true);
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('\"${b.title}\" kütüphaneye eklendi!'),
+                                        ),
+                                      );
+                                    } else {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Ekleme başarısız oldu 😕'),
+                                        ),
+                                      );
+                                    }
+                                  }
                                 },
                               ),
                               _actionButton(
@@ -419,23 +459,15 @@ https://books.google.com/books?id=${b.id}
                                 b.description,
                                 textAlign: TextAlign.center,
                                 maxLines: _descExpanded ? null : 3,
-                                overflow:
-                                    _descExpanded
-                                        ? TextOverflow.visible
-                                        : TextOverflow.ellipsis,
-                                style: AppTextStyle.BODY.copyWith(
-                                  color: mutedWhite,
-                                ),
+                                overflow: _descExpanded
+                                    ? TextOverflow.visible
+                                    : TextOverflow.ellipsis,
+                                style: AppTextStyle.BODY.copyWith(color: mutedWhite),
                               ),
                               InkWell(
-                                onTap:
-                                    () => setState(
-                                      () => _descExpanded = !_descExpanded,
-                                    ),
+                                onTap: () => setState(() => _descExpanded = !_descExpanded),
                                 child: Text(
-                                  _descExpanded
-                                      ? 'daha az göster'
-                                      : 'daha çok oku',
+                                  _descExpanded ? 'daha az göster' : 'daha çok oku',
                                   style: AppTextStyle.MINI_DESCRIPTION_BOLD
                                       .copyWith(color: AppColors.white),
                                 ),
@@ -453,15 +485,11 @@ https://books.google.com/books?id=${b.id}
                             children: [
                               _metaRow('Yayıncı', b.publisher, mutedWhite),
                               _metaRow('Yıl', b.publishedDate, mutedWhite),
-                              _metaRow(
-                                'Sayfa',
-                                b.pageCount?.toString(),
-                                mutedWhite,
-                              ),
+                              _metaRow('Sayfa', b.pageCount?.toString(), mutedWhite),
                               _metaRow(
                                 'ISBN',
                                 (b.industryIdentifiers != null &&
-                                        b.industryIdentifiers!.isNotEmpty)
+                                    b.industryIdentifiers!.isNotEmpty)
                                     ? b.industryIdentifiers!.join(', ')
                                     : null,
                                 mutedWhite,

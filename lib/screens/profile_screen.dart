@@ -90,7 +90,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => LibraryScreen(userId: widget.userId),
+            builder: (_) => LibraryScreen(
+              userId: widget.userId,
+              userRatings: {}, // Şu an profilden kütüphane puanını değiştirmiyoruz
+              onRate: (book, rating) {
+                // Profil ekranından rating değişimi genelde olmaz,
+                // istersen buradan da backend’e POST atabilirsin
+              },
+              onRemoveFromLibrary: (book) {
+                // Profil ekranından kütüphaneden çıkarma yapılırsa
+                // listeyi güncellemek için stub bırakıyoruz
+              },
+            ),
           ),
         );
         break;
@@ -290,7 +301,3 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 }
-
-
-
-
