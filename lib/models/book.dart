@@ -33,39 +33,58 @@ class Book {
   });
 
   factory Book.fromJson(Map<String, dynamic> json) {
-    final info = (json['volumeInfo'] as Map<String, dynamic>?) ?? {};
+    //final info = (json['volumeInfo'] as Map<String, dynamic>?) ?? {};
+    if (json.containsKey('volumeInfo')) {
+      final info = (json['volumeInfo'] as Map<String, dynamic>?) ?? {};
+      final cats =
+          (info['categories'] as List<dynamic>?)?.cast<String>() ?? <String>[];
 
-    final cats =
-        (info['categories'] as List<dynamic>?)?.cast<String>() ?? <String>[];
+      // ISBN listesi
+      final identifiers =
+          (info['industryIdentifiers'] as List<dynamic>?)
+              ?.map((e) => (e as Map<String, dynamic>)['identifier'] as String?)
+              .whereType<String>()
+              .toList();
 
-    // ISBN listesi
-    final identifiers =
-        (info['industryIdentifiers'] as List<dynamic>?)
-            ?.map((e) => (e as Map<String, dynamic>)['identifier'] as String?)
-            .whereType<String>()
-            .toList();
-
-    // Thumbnail HTTPS dönüşümü
-    String thumb = (info['imageLinks']?['thumbnail'] as String?) ?? '';
-    if (thumb.startsWith('http:')) {
-      thumb = thumb.replaceFirst('http:', 'https:');
+      // Thumbnail HTTPS dönüşümü
+      String thumb = (info['imageLinks']?['thumbnail'] as String?) ?? '';
+      if (thumb.startsWith('http:')) {
+        thumb = thumb.replaceFirst('http:', 'https:');
+      }
+      return Book(
+        id: json['id'] as String,
+        title: info['title'] as String? ?? '—',
+        authors:
+            (info['authors'] as List<dynamic>?)?.cast<String>() ??
+            ['Bilinmeyen yazar'],
+        thumbnailUrl: thumb,
+        description: info['description'] as String? ?? 'Açıklama bulunamadı.',
+        categories: cats,
+        publisher: info['publisher'] as String?,
+        publishedDate: info['publishedDate'] as String?,
+        pageCount: info['pageCount'] as int?,
+        industryIdentifiers: identifiers,
+        averageRating: (info['averageRating'] as num?)?.toDouble(),
+        ratingsCount: info['ratingsCount'] as int?,
+      );
+    } else {
+      return Book(
+        id: json['id'] as String,
+        title: json['title'] as String? ?? '—',
+        authors:
+            (json['authors'] as List<dynamic>?)?.cast<String>() ??
+            ['Bilinmeyen yazar'],
+        thumbnailUrl: json['thumbnailUrl'] as String? ?? '',
+        description: json['description'] as String? ?? '',
+        publisher: json['publisher'] as String?,
+        publishedDate: json['publishedDate'] as String?,
+        pageCount: json['pageCount'] as int?,
+        industryIdentifiers:
+            (json['industryIdentifiers'] as List<dynamic>?)?.cast<String>(),
+        averageRating: (json['averageRating'] as num?)?.toDouble(),
+        ratingsCount: json['ratingsCount'] as int?,
+        categories: <String>[],
+      );
     }
-
-    return Book(
-      id: json['id'] as String,
-      title: info['title'] as String? ?? '—',
-      authors:
-          (info['authors'] as List<dynamic>?)?.cast<String>() ??
-          ['Bilinmeyen yazar'],
-      thumbnailUrl: thumb,
-      description: info['description'] as String? ?? 'Açıklama bulunamadı.',
-      categories: cats,
-      publisher: info['publisher'] as String?,
-      publishedDate: info['publishedDate'] as String?,
-      pageCount: info['pageCount'] as int?,
-      industryIdentifiers: identifiers,
-      averageRating: (info['averageRating'] as num?)?.toDouble(),
-      ratingsCount: info['ratingsCount'] as int?,
-    );
   }
 }

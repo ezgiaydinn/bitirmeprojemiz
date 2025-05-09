@@ -39,21 +39,40 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     _loadFavorites();
   }
 
+  //Future<void> _loadFavorites() async {
+  //setState(() => _loading = true);
+  //try {
+  //final fetched = await _fetchFavoritesFromApi();
+  //setState(() => _favorites = fetched);
+  //} catch (e) {
+  //debugPrint('Favori yükleme hatası: $e');
+  //} finally {
+  //setState(() => _loading = false);
+  //}
+  //}
+
   Future<void> _loadFavorites() async {
-    setState(() => _loading = true);
-    try {
-      final fetched = await _fetchFavoritesFromApi();
-      setState(() => _favorites = fetched);
-    } catch (e) {
-      debugPrint('Favori yükleme hatası: $e');
-    } finally {
-      setState(() => _loading = false);
+    final res = await http.get(
+      Uri.parse('$baseUrl/api/favorites/${widget.userId}'),
+      headers: {'Cache-Control': 'no-cache'},
+    );
+    if (res.statusCode == 200) {
+      final List data = jsonDecode(res.body);
+      setState(() {
+        _favorites = data.map((j) => Book.fromJson(j)).toList();
+      });
     }
   }
 
   Future<List<Book>> _fetchFavoritesFromApi() async {
     final url = Uri.parse('$baseUrl/api/favorites/${widget.userId}');
-    final res = await http.get(url);
+    final res = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-control': 'no-cache',
+      },
+    );
     debugPrint('🚀 [GET /favorites] status: ${res.statusCode}');
     debugPrint('🚀 [GET /favorites] body:   ${res.body}');
     if (res.statusCode != 200) {
@@ -85,6 +104,27 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       if (authorsList.isEmpty) {
         authorsList = ['Bilinmeyen yazar'];
       }
+
+      List<String> genres = [];
+      final rawGenres = item['genreJson'];
+      if (rawGenres != null) {
+        if (rawGenres is String) {
+          if (rawGenres.startsWith('[') && rawGenres.endsWith(']')) {
+            try {
+              final parsed = jsonDecode(rawGenres);
+              if (parsed is List) {
+                genres = parsed.map((e) => e.toString()).toList();
+              }
+            } catch (_) {}
+          }
+          if (genres.isEmpty) {
+            genres = [rawGenres];
+          }
+        } else if (rawGenres is List) {
+          genres = rawGenres.map((e) => e.toString()).toList();
+        }
+      }
+      if (genres.isEmpty) genres = ['—'];
 
       return Book(
         id: item['id'] as String,
