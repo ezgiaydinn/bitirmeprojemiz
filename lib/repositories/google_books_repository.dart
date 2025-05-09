@@ -8,7 +8,8 @@ class GoogleBooksRepository {
 
   Future<List<Book>> fetchBooks(String query) async {
     try {
-      final url = '$_baseUrl?q=${Uri.encodeQueryComponent(query)}&maxResults=20';
+      final url =
+          '$_baseUrl?q=${Uri.encodeQueryComponent(query)}&maxResults=20';
       final response = await http.get(Uri.parse(url));
 
       if (response.statusCode == 200) {
@@ -28,21 +29,26 @@ class GoogleBooksRepository {
     final info = (item['volumeInfo'] ?? {}) as Map<String, dynamic>;
 
     // ISBN’leri listeye çevir
-    final ids = (info['industryIdentifiers'] as List<dynamic>?)
-        ?.map((e) => (e as Map<String, dynamic>)['identifier'] as String?)
-        .whereType<String>()
-        .toList();
+    final ids =
+        (info['industryIdentifiers'] as List<dynamic>?)
+            ?.map((e) => (e as Map<String, dynamic>)['identifier'] as String?)
+            .whereType<String>()
+            .toList();
 
     // Küçük http→https düzeltmesi
     String thumb = info['imageLinks']?['thumbnail'] ?? '';
-    if (thumb.startsWith('http:')) thumb = thumb.replaceFirst('http:', 'https:');
+    if (thumb.startsWith('http:'))
+      thumb = thumb.replaceFirst('http:', 'https:');
 
     return Book(
       id: item['id'] ?? '',
       title: info['title'] ?? 'Başlıksız',
-      authors: (info['authors'] as List<dynamic>?)?.cast<String>() ?? ['Bilinmeyen Yazar'],
+      authors:
+          (info['authors'] as List<dynamic>?)?.cast<String>() ??
+          ['Bilinmeyen Yazar'],
       thumbnailUrl: thumb,
       description: info['description'] ?? 'Açıklama bulunamadı.',
+      categories: (info['categories'] as List<dynamic>?)?.cast<String>() ?? [],
       publisher: info['publisher'],
       publishedDate: info['publishedDate'],
       pageCount: info['pageCount'],

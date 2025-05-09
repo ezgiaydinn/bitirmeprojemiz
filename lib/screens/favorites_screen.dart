@@ -66,18 +66,20 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       List<String> authorsList = [];
       final rawAuthors = item['authors'];
       if (rawAuthors is List) {
-        authorsList = rawAuthors
-            .map((e) => (e ?? '').toString())
-            .where((s) => s.isNotEmpty)
-            .toList();
+        authorsList =
+            rawAuthors
+                .map((e) => (e ?? '').toString())
+                .where((s) => s.isNotEmpty)
+                .toList();
       }
       // 2) Hâlâ boşsa, eski string split mantığı:
       else if (rawAuthors is String) {
-        authorsList = rawAuthors
-            .split(',')
-            .map((s) => s.trim())
-            .where((s) => s.isNotEmpty)
-            .toList();
+        authorsList =
+            rawAuthors
+                .split(',')
+                .map((s) => s.trim())
+                .where((s) => s.isNotEmpty)
+                .toList();
       }
       // 3) Son çare: fallback
       if (authorsList.isEmpty) {
@@ -85,17 +87,18 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       }
 
       return Book(
-        id:                  item['id']            as String,
-        title:               item['title']         as String,
-        authors:             authorsList,
-        thumbnailUrl:        (item['thumbnailUrl'] as String?) ?? '',
-        description:         'Açıklama bulunamadı.',
-        publisher:           null,
-        publishedDate:       null,
-        pageCount:           null,
+        id: item['id'] as String,
+        title: item['title'] as String,
+        authors: authorsList,
+        thumbnailUrl: (item['thumbnailUrl'] as String?) ?? '',
+        description: 'Açıklama bulunamadı.',
+        categories: item['genre'] as List<String>,
+        publisher: null,
+        publishedDate: null,
+        pageCount: null,
         industryIdentifiers: null,
-        averageRating:       null,
-        ratingsCount:        null,
+        averageRating: null,
+        ratingsCount: null,
       );
     }).toList();
   }
@@ -105,10 +108,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     try {
       final res = await http
           .post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'userId': widget.userId, 'bookId': bookId}),
-      )
+            url,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'userId': widget.userId, 'bookId': bookId}),
+          )
           .timeout(const Duration(seconds: 5));
       debugPrint('🚀 [Fav→Lib] status: ${res.statusCode}');
       debugPrint('🚀 [Fav→Lib] body:   ${res.body}');
@@ -129,9 +132,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         SnackBar(content: Text('\"${book.title}\" kütüphaneye taşındı!')),
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Taşıma başarısız oldu 😕')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Taşıma başarısız oldu 😕')));
     }
     setState(() => _loading = false);
   }
@@ -163,18 +166,22 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               ),
             ],
           ),
-          body: _favorites.isEmpty
-              ? Center(
-            child: Text(
-              'Henüz favori kitabın yok 😊',
-              style: AppTextStyle.BODY.copyWith(fontSize: 18),
-              textAlign: TextAlign.center,
-            ),
-          )
-              : Padding(
-            padding: EdgeInsets.symmetric(horizontal: padH, vertical: padV),
-            child: _isGrid ? _buildGrid() : _buildList(),
-          ),
+          body:
+              _favorites.isEmpty
+                  ? Center(
+                    child: Text(
+                      'Henüz favori kitabın yok 😊',
+                      style: AppTextStyle.BODY.copyWith(fontSize: 18),
+                      textAlign: TextAlign.center,
+                    ),
+                  )
+                  : Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: padH,
+                      vertical: padV,
+                    ),
+                    child: _isGrid ? _buildGrid() : _buildList(),
+                  ),
         ),
         if (_loading)
           Container(
@@ -193,20 +200,23 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         final b = _favorites[i];
         final rating = widget.userRatings[b.id] ?? 0;
         return Card(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           elevation: 4,
           child: ListTile(
-            leading: b.thumbnailUrl.isNotEmpty
-                ? ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: Image.network(
-                b.thumbnailUrl,
-                width: 50,
-                height: 70,
-                fit: BoxFit.cover,
-              ),
-            )
-                : const Icon(Icons.menu_book, size: 50, color: Colors.grey),
+            leading:
+                b.thumbnailUrl.isNotEmpty
+                    ? ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: Image.network(
+                        b.thumbnailUrl,
+                        width: 50,
+                        height: 70,
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                    : const Icon(Icons.menu_book, size: 50, color: Colors.grey),
             title: Text(
               b.title,
               style: AppTextStyle.BODY.copyWith(fontWeight: FontWeight.w600),
@@ -223,7 +233,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   Row(
                     children: List.generate(
                       rating,
-                          (_) => Icon(Icons.star, size: 12, color: AppColors.logoPink),
+                      (_) =>
+                          Icon(Icons.star, size: 12, color: AppColors.logoPink),
                     ),
                   ),
                 ],
@@ -232,27 +243,31 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             trailing: ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.accent,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               icon: const Icon(Icons.library_add, size: 18),
               label: const Text('Taşı'),
               onPressed: () => _onAddToLibrary(b),
             ),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => BookDetailScreen(
-                  userId: widget.userId,
-                  book: b,
-                  isFavorite: true,
-                  isInLibrary: false,
-                  userRating: rating,
-                  onToggleFavorite: (_) => _loadFavorites(),
-                  onToggleLibrary: (_) => _onAddToLibrary(b),
-                  onRate: widget.onRate,
+            onTap:
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder:
+                        (_) => BookDetailScreen(
+                          userId: widget.userId,
+                          book: b,
+                          isFavorite: true,
+                          isInLibrary: false,
+                          userRating: rating,
+                          onToggleFavorite: (_) => _loadFavorites(),
+                          onToggleLibrary: (_) => _onAddToLibrary(b),
+                          onRate: widget.onRate,
+                        ),
+                  ),
                 ),
-              ),
-            ),
           ),
         );
       },
@@ -272,42 +287,55 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         final b = _favorites[i];
         final rating = widget.userRatings[b.id] ?? 0;
         return Card(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           elevation: 4,
           child: InkWell(
             borderRadius: BorderRadius.circular(12),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => BookDetailScreen(
-                  userId: widget.userId,
-                  book: b,
-                  isFavorite: true,
-                  isInLibrary: false,
-                  userRating: rating,
-                  onToggleFavorite: (_) => _loadFavorites(),
-                  onToggleLibrary: (_) => _onAddToLibrary(b),
-                  onRate: widget.onRate,
+            onTap:
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder:
+                        (_) => BookDetailScreen(
+                          userId: widget.userId,
+                          book: b,
+                          isFavorite: true,
+                          isInLibrary: false,
+                          userRating: rating,
+                          onToggleFavorite: (_) => _loadFavorites(),
+                          onToggleLibrary: (_) => _onAddToLibrary(b),
+                          onRate: widget.onRate,
+                        ),
+                  ),
                 ),
-              ),
-            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Expanded(
-                  child: b.thumbnailUrl.isNotEmpty
-                      ? ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                    child: Image.network(
-                      b.thumbnailUrl,
-                      fit: BoxFit.cover,
-                      loadingBuilder: (ctx, child, prog) {
-                        if (prog == null) return child;
-                        return const Center(child: CircularProgressIndicator());
-                      },
-                    ),
-                  )
-                      : const Icon(Icons.menu_book, size: 60, color: Colors.grey),
+                  child:
+                      b.thumbnailUrl.isNotEmpty
+                          ? ClipRRect(
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(12),
+                            ),
+                            child: Image.network(
+                              b.thumbnailUrl,
+                              fit: BoxFit.cover,
+                              loadingBuilder: (ctx, child, prog) {
+                                if (prog == null) return child;
+                                return const Center(
+                                  child: CircularProgressIndicator(),
+                                );
+                              },
+                            ),
+                          )
+                          : const Icon(
+                            Icons.menu_book,
+                            size: 60,
+                            color: Colors.grey,
+                          ),
                 ),
                 Padding(
                   padding: const EdgeInsets.all(8.0),
@@ -315,7 +343,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     b.title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: AppTextStyle.BODY.copyWith(fontWeight: FontWeight.w600),
+                    style: AppTextStyle.BODY.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
                 Padding(
@@ -332,7 +362,11 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     child: Row(
                       children: List.generate(
                         rating,
-                            (_) => Icon(Icons.star, size: 12, color: AppColors.logoPink),
+                        (_) => Icon(
+                          Icons.star,
+                          size: 12,
+                          color: AppColors.logoPink,
+                        ),
                       ),
                     ),
                   ),
@@ -343,7 +377,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.accent,
                       minimumSize: const Size.fromHeight(36),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                     icon: const Icon(Icons.library_add, size: 18),
                     label: const Text('Kütüphaneye Taşı'),

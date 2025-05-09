@@ -7,13 +7,14 @@ import 'book_repository.dart';
 class LocalBookRepository implements BookRepository {
   final List<Book> _dummy = List<Book>.generate(
     20,
-        (i) => Book(
+    (i) => Book(
       id: '$i',
       title: 'Demo Kitap $i',
       authors: ['Yazar $i'],
       thumbnailUrl: '',
       description: 'Demo açıklama $i',
-      publishedDate: '2025',   // artık nullable ama biz dolduruyoruz
+      categories: ['Kategori $i'],
+      publishedDate: '2025', // artık nullable ama biz dolduruyoruz
       averageRating: null,
       ratingsCount: null,
     ),

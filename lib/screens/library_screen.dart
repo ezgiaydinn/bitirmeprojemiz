@@ -46,23 +46,25 @@ class _LibraryScreenState extends State<LibraryScreen> {
       if (res.statusCode == 200) {
         final List data = jsonDecode(res.body);
         setState(() {
-          _library = data.map((e) {
-            // e bir Map<String,dynamic> ve bizim endpoint şu alanları döndürüyor:
-            // id, title, authors (dizi), thumbnailUrl, description?, publisher?, vs.
-            return Book(
-              id: e['id'] as String,
-              title: e['title'] as String,
-              authors: List<String>.from(e['authors'] ?? []),
-              thumbnailUrl: e['thumbnailUrl'] as String? ?? '',
-              description: e['description'] as String? ?? 'Açıklama yok.',
-              publisher: e['publisher'] as String?,
-              publishedDate: e['publishedDate'] as String?,
-              pageCount: e['pageCount'] as int?,
-              industryIdentifiers: null,
-              averageRating: null,
-              ratingsCount: null,
-            );
-          }).toList();
+          _library =
+              data.map((e) {
+                // e bir Map<String,dynamic> ve bizim endpoint şu alanları döndürüyor:
+                // id, title, authors (dizi), thumbnailUrl, description?, publisher?, vs.
+                return Book(
+                  id: e['id'] as String,
+                  title: e['title'] as String,
+                  authors: List<String>.from(e['authors'] ?? []),
+                  thumbnailUrl: e['thumbnailUrl'] as String? ?? '',
+                  description: e['description'] as String? ?? 'Açıklama yok.',
+                  categories: List<String>.from(e['genres'] ?? []),
+                  publisher: e['publisher'] as String?,
+                  publishedDate: e['publishedDate'] as String?,
+                  pageCount: e['pageCount'] as int?,
+                  industryIdentifiers: null,
+                  averageRating: null,
+                  ratingsCount: null,
+                );
+              }).toList();
         });
       } else {
         debugPrint('Kütüphane yüklenemedi: ${res.statusCode}');
@@ -74,17 +76,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
     }
   }
 
-
   Future<void> _removeFromLibrary(Book book) async {
     final url = Uri.parse('$baseUrl/api/library/remove');
     try {
       final res = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'userId': widget.userId,
-          'bookId': book.id,
-        }),
+        body: jsonEncode({'userId': widget.userId, 'bookId': book.id}),
       );
       if (res.statusCode == 200) {
         widget.onRemoveFromLibrary(book);
@@ -100,9 +98,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
       }
     } catch (e) {
       debugPrint('Sunucuya bağlanılamadı ❌: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sunucu hatası 😕')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Sunucu hatası 😕')));
     }
   }
 
@@ -114,101 +112,123 @@ class _LibraryScreenState extends State<LibraryScreen> {
           appBar: AppBar(
             backgroundColor: AppColors.accent,
             elevation: 0,
-            title: Text('Kütüphane',
-                style: AppTextStyle.HEADING.copyWith(color: Colors.white)),
-          ),
-          body: _library.isEmpty && !_loading
-              ? Center(
-            child: Text(
-              'Kütüphanenizde kitap yok 😊',
-              style: AppTextStyle.BODY.copyWith(fontSize: 18),
-              textAlign: TextAlign.center,
+            title: Text(
+              'Kütüphane',
+              style: AppTextStyle.HEADING.copyWith(color: Colors.white),
             ),
-          )
-              : Padding(
-            padding:
-            const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-            child: ListView.separated(
-              itemCount: _library.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemBuilder: (ctx, i) {
-                final b = _library[i];
-                final rating = widget.userRatings[b.id] ?? 0;
-                return Card(
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  elevation: 4,
-                  child: ListTile(
-                    leading: b.thumbnailUrl.isNotEmpty
-                        ? ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
-                      child: Image.network(
-                        b.thumbnailUrl,
-                        width: 50,
-                        height: 70,
-                        fit: BoxFit.cover,
-                      ),
-                    )
-                        : const Icon(Icons.menu_book,
-                        size: 50, color: Colors.grey),
-                    title: Text(b.title,
-                        style: AppTextStyle.BODY.copyWith(
-                            fontWeight: FontWeight.w600)),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(b.authors.join(', '),
-                            style: AppTextStyle
-                                .MINI_DEFAULT_DESCRIPTION_TEXT),
-                        if (rating > 0) ...[
-                          const SizedBox(height: 4),
-                          Row(
-                            children: List.generate(
-                              rating,
-                                  (_) => Icon(Icons.star,
-                                  size: 12, color: AppColors.logoPink),
+          ),
+          body:
+              _library.isEmpty && !_loading
+                  ? Center(
+                    child: Text(
+                      'Kütüphanenizde kitap yok 😊',
+                      style: AppTextStyle.BODY.copyWith(fontSize: 18),
+                      textAlign: TextAlign.center,
+                    ),
+                  )
+                  : Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 8,
+                      horizontal: 12,
+                    ),
+                    child: ListView.separated(
+                      itemCount: _library.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      itemBuilder: (ctx, i) {
+                        final b = _library[i];
+                        final rating = widget.userRatings[b.id] ?? 0;
+                        return Card(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 4,
+                          child: ListTile(
+                            leading:
+                                b.thumbnailUrl.isNotEmpty
+                                    ? ClipRRect(
+                                      borderRadius: BorderRadius.circular(6),
+                                      child: Image.network(
+                                        b.thumbnailUrl,
+                                        width: 50,
+                                        height: 70,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    )
+                                    : const Icon(
+                                      Icons.menu_book,
+                                      size: 50,
+                                      color: Colors.grey,
+                                    ),
+                            title: Text(
+                              b.title,
+                              style: AppTextStyle.BODY.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  b.authors.join(', '),
+                                  style:
+                                      AppTextStyle
+                                          .MINI_DEFAULT_DESCRIPTION_TEXT,
+                                ),
+                                if (rating > 0) ...[
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: List.generate(
+                                      rating,
+                                      (_) => Icon(
+                                        Icons.star,
+                                        size: 12,
+                                        color: AppColors.logoPink,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            trailing: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.accent,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              icon: const Icon(Icons.delete, size: 18),
+                              label: const Text('Çıkar'),
+                              onPressed: () => _removeFromLibrary(b),
+                            ),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (_) => BookDetailScreen(
+                                        userId: widget.userId,
+                                        book: b,
+                                        isFavorite: false,
+                                        isInLibrary: true,
+                                        userRating: rating,
+                                        onToggleFavorite: (_) {},
+                                        onToggleLibrary: (_) {},
+                                        onRate: widget.onRate,
+                                      ),
+                                ),
+                              );
+                            },
                           ),
-                        ],
-                      ],
+                        );
+                      },
                     ),
-                    trailing: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.accent,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8)),
-                      ),
-                      icon: const Icon(Icons.delete, size: 18),
-                      label: const Text('Çıkar'),
-                      onPressed: () => _removeFromLibrary(b),
-                    ),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => BookDetailScreen(
-                            userId: widget.userId,
-                            book: b,
-                            isFavorite: false,
-                            isInLibrary: true,
-                            userRating: rating,
-                            onToggleFavorite: (_) {},
-                            onToggleLibrary: (_) {},
-                            onRate: widget.onRate,
-                          ),
-                        ),
-                      );
-                    },
                   ),
-                );
-              },
-            ),
-          ),
         ),
         if (_loading)
           Container(
-              color: Colors.black38,
-              child: const Center(child: CircularProgressIndicator())),
+            color: Colors.black38,
+            child: const Center(child: CircularProgressIndicator()),
+          ),
       ],
     );
   }

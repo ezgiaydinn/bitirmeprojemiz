@@ -6,6 +6,7 @@ class Book {
   final List<String> authors;
   final String thumbnailUrl;
   final String description;
+  final List<String> categories;
 
   // Yeni eklenen alanlar
   final String? publisher;
@@ -22,6 +23,7 @@ class Book {
     required this.authors,
     required this.thumbnailUrl,
     required this.description,
+    required this.categories,
     this.publisher,
     this.publishedDate,
     this.pageCount,
@@ -33,11 +35,15 @@ class Book {
   factory Book.fromJson(Map<String, dynamic> json) {
     final info = (json['volumeInfo'] as Map<String, dynamic>?) ?? {};
 
+    final cats =
+        (info['categories'] as List<dynamic>?)?.cast<String>() ?? <String>[];
+
     // ISBN listesi
-    final identifiers = (info['industryIdentifiers'] as List<dynamic>?)
-        ?.map((e) => (e as Map<String, dynamic>)['identifier'] as String?)
-        .whereType<String>()
-        .toList();
+    final identifiers =
+        (info['industryIdentifiers'] as List<dynamic>?)
+            ?.map((e) => (e as Map<String, dynamic>)['identifier'] as String?)
+            .whereType<String>()
+            .toList();
 
     // Thumbnail HTTPS dönüşümü
     String thumb = (info['imageLinks']?['thumbnail'] as String?) ?? '';
@@ -48,18 +54,17 @@ class Book {
     return Book(
       id: json['id'] as String,
       title: info['title'] as String? ?? '—',
-      authors: (info['authors'] as List<dynamic>?)
-          ?.cast<String>() ??
+      authors:
+          (info['authors'] as List<dynamic>?)?.cast<String>() ??
           ['Bilinmeyen yazar'],
       thumbnailUrl: thumb,
-      description: info['description'] as String? ??
-          'Açıklama bulunamadı.',
+      description: info['description'] as String? ?? 'Açıklama bulunamadı.',
+      categories: cats,
       publisher: info['publisher'] as String?,
       publishedDate: info['publishedDate'] as String?,
       pageCount: info['pageCount'] as int?,
       industryIdentifiers: identifiers,
-      averageRating:
-      (info['averageRating'] as num?)?.toDouble(),
+      averageRating: (info['averageRating'] as num?)?.toDouble(),
       ratingsCount: info['ratingsCount'] as int?,
     );
   }
