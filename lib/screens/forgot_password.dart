@@ -4,11 +4,14 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:http/http.dart' as http;
 
 import 'package:bitirmeprojesi/constant/app_colors.dart';
 import 'package:bitirmeprojesi/constant/app_text_style.dart';
-import 'package:bitirmeprojesi/screens/login_screen.dart';
-import 'package:http/http.dart' as http;
+import 'login_screen.dart';
+
+// 🔄 API adresi sabiti
+const String kBaseUrl = 'https://projembackend-production-4549.up.railway.app';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -18,11 +21,11 @@ class ForgotPasswordScreen extends StatefulWidget {
 }
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
-  final _formKey = GlobalKey<FormState>();
+  final _formKey         = GlobalKey<FormState>();
   final _emailController = TextEditingController();
 
-  bool _isLoading = false;
-  String _message = '';
+  bool   _isLoading = false;
+  String _message   = '';
 
   Future<void> _sendResetLink() async {
     FocusScope.of(context).unfocus();
@@ -30,16 +33,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     setState(() {
       _isLoading = true;
-      _message = '';
+      _message   = '';
     });
 
-    const baseUrl = 'https://projembackend-production-4549.up.railway.app';
     try {
       final resp = await http.post(
-        Uri.parse('$baseUrl/api/auth/forgot-password'),
+        Uri.parse('$kBaseUrl/api/auth/forgot'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': _emailController.text.trim()}),
       );
+
       if (resp.statusCode == 200) {
         setState(() {
           _message = 'E-posta adresinize sıfırlama linki gönderildi.';
@@ -67,17 +70,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // 1) MediaQuery ile ekran boyutunu al
-    final size = MediaQuery.of(context).size;
-    final w = size.width;
-    final h = size.height;
-
-    // 2) Dinamik değerler
-    final illustrationHeight = h * 0.25;
-    final logoSize           = w * 0.25;
-    final padH               = w * 0.06;
-    final padVsmall          = h * 0.02;
-    final padVmedium         = h * 0.04;
+    final size                = MediaQuery.of(context).size;
+    final w                   = size.width;
+    final h                   = size.height;
+    final illustrationHeight  = h * 0.25;
+    final logoSize            = w * 0.25;
+    final padH                = w * 0.06;
+    final padVsmall           = h * 0.02;
+    final padVmedium          = h * 0.04;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
@@ -99,9 +99,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 borderRadius: BorderRadius.circular(16),
                 child: Image.asset(
                   'assets/images/logo.png',
-                  width: logoSize,
+                  width:  logoSize,
                   height: logoSize,
-                  fit: BoxFit.cover,
+                  fit:    BoxFit.cover,
                 ),
               ),
               SizedBox(height: padVmedium),
@@ -179,8 +179,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                               'Gönder',
                               style: AppTextStyle.MIDDLE_BUTTON_TEXT
                                   .copyWith(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
+                                fontSize:    16,
+                                fontWeight:  FontWeight.bold,
                                 letterSpacing: 0,
                               ),
                             ),
@@ -210,8 +210,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               TextButton(
                 onPressed: () => Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(
-                      builder: (_) => const LoginScreen()),
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
                 ),
                 child: Text(
                   'Giriş Ekranına Dön',

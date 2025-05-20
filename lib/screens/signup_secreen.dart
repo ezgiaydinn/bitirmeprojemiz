@@ -1,31 +1,34 @@
 // lib/screens/signup_secreen.dart
+
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+
 import '../components/square_box.dart';
 import '../constant/app_text_style.dart';
+import '../constant/app_colors.dart';
 import 'login_screen.dart';
-import 'package:bitirmeprojesi/constant/app_colors.dart';
+
+const String kBaseUrl = 'https://projembackend-production-4549.up.railway.app';
 
 class SignupScreen extends StatefulWidget {
-  const SignupScreen({Key? key}) : super(key: key);
+  const SignupScreen({super.key});
 
   @override
   State<SignupScreen> createState() => _SignupScreenState();
 }
 
 class _SignupScreenState extends State<SignupScreen> {
-  final _formKey = GlobalKey<FormState>();
+  final _formKey                 = GlobalKey<FormState>();
   final nameController           = TextEditingController();
   final emailController          = TextEditingController();
   final passwordController       = TextEditingController();
   final repeatPasswordController = TextEditingController();
 
-  bool _isLoading      = false;
-  bool _obscurePassword= true;
-  bool _obscureRepeat  = true;
-  String errorMessage  = '';
+  bool   _isLoading       = false;
+  bool   _obscurePassword = true;
+  bool   _obscureRepeat   = true;
+  String errorMessage     = '';
 
   @override
   void dispose() {
@@ -41,7 +44,7 @@ class _SignupScreenState extends State<SignupScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
-      _isLoading = true;
+      _isLoading   = true;
       errorMessage = '';
     });
 
@@ -53,24 +56,35 @@ class _SignupScreenState extends State<SignupScreen> {
     if (password != repeat) {
       setState(() {
         errorMessage = 'Şifreler eşleşmiyor.';
-        _isLoading = false;
+        _isLoading   = false;
       });
       return;
     }
 
-    const baseUrl = 'https://projembackend-production-4549.up.railway.app';
     try {
       final resp = await http.post(
-        Uri.parse('$baseUrl/api/auth/signup'),
-        headers: {'Content-Type':'application/json'},
+        Uri.parse('$kBaseUrl/api/auth/signup'),
+        headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'name': name,
-          'email': email,
+          'name':     name,
+          'email':    email,
           'password': password,
         }),
       );
 
       if (resp.statusCode == 201) {
+        // 1) Başarı SnackBar’ı
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Kayıt başarılı! Lütfen e-postanı kontrol edip hesabını doğrula.',
+              textAlign: TextAlign.center,
+            ),
+            duration: Duration(seconds: 3),
+          ),
+        );
+        // 2) Login sayfasına dön
+        if (!mounted) return;
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -92,11 +106,10 @@ class _SignupScreenState extends State<SignupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // ekran ölçüleri
     final size = MediaQuery.of(context).size;
-    final w = size.width, h = size.height;
+    final w    = size.width;
+    final h    = size.height;
 
-    // dinamik sabitler
     final logoSize     = w * 0.25;
     final padH         = w * 0.06;
     final padVsmall    = h * 0.02;
@@ -110,24 +123,24 @@ class _SignupScreenState extends State<SignupScreen> {
           padding: EdgeInsets.symmetric(horizontal: padH),
           child: ConstrainedBox(
             constraints: BoxConstraints(
-                minHeight: h - MediaQuery.of(context).padding.vertical
+              minHeight: h - MediaQuery.of(context).padding.vertical,
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // logo
+                // Logo
                 ClipRRect(
                   borderRadius: BorderRadius.circular(16),
                   child: Image.asset(
                     "assets/images/logo.png",
-                    width: logoSize,
+                    width:  logoSize,
                     height: logoSize,
-                    fit: BoxFit.cover,
+                    fit:    BoxFit.cover,
                   ),
                 ),
                 SizedBox(height: padVmedium),
 
-                // form kartı
+                // Form kartı
                 Card(
                   elevation: 8,
                   shape: RoundedRectangleBorder(
@@ -140,7 +153,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       key: _formKey,
                       child: Column(
                         children: [
-                          // kullanıcı adı
+                          // Kullanıcı adı
                           TextFormField(
                             controller: nameController,
                             decoration: InputDecoration(
@@ -151,13 +164,13 @@ class _SignupScreenState extends State<SignupScreen> {
                               ),
                             ),
                             validator: (v) =>
-                            v == null || v.isEmpty
+                            (v == null || v.isEmpty)
                                 ? 'Kullanıcı adı boş olamaz'
                                 : null,
                           ),
                           SizedBox(height: padVsmall),
 
-                          // e-posta
+                          // E-posta
                           TextFormField(
                             controller: emailController,
                             keyboardType: TextInputType.emailAddress,
@@ -180,7 +193,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           ),
                           SizedBox(height: padVsmall),
 
-                          // şifre
+                          // Şifre
                           TextFormField(
                             controller: passwordController,
                             obscureText: _obscurePassword,
@@ -191,11 +204,8 @@ class _SignupScreenState extends State<SignupScreen> {
                                 icon: Icon(_obscurePassword
                                     ? Icons.visibility_off
                                     : Icons.visibility),
-                                onPressed: () {
-                                  setState(() {
-                                    _obscurePassword = !_obscurePassword;
-                                  });
-                                },
+                                onPressed: () =>
+                                    setState(() => _obscurePassword = !_obscurePassword),
                               ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -211,7 +221,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           ),
                           SizedBox(height: padVsmall),
 
-                          // şifre tekrar
+                          // Şifre tekrar
                           TextFormField(
                             controller: repeatPasswordController,
                             obscureText: _obscureRepeat,
@@ -222,11 +232,8 @@ class _SignupScreenState extends State<SignupScreen> {
                                 icon: Icon(_obscureRepeat
                                     ? Icons.visibility_off
                                     : Icons.visibility),
-                                onPressed: () {
-                                  setState(() {
-                                    _obscureRepeat = !_obscureRepeat;
-                                  });
-                                },
+                                onPressed: () =>
+                                    setState(() => _obscureRepeat = !_obscureRepeat),
                               ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -242,7 +249,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           ),
                           SizedBox(height: padVsmall),
 
-                          // hata mesajı
+                          // Hata mesajı
                           if (errorMessage.isNotEmpty)
                             Padding(
                               padding: EdgeInsets.only(bottom: padVsmall),
@@ -252,7 +259,7 @@ class _SignupScreenState extends State<SignupScreen> {
                               ),
                             ),
 
-                          // kayıt ol butonu
+                          // Kayıt ol butonu
                           SizedBox(
                             width: double.infinity,
                             height: buttonHeight,
@@ -269,17 +276,14 @@ class _SignupScreenState extends State<SignupScreen> {
                               child: _isLoading
                                   ? const Center(
                                 child: CircularProgressIndicator(
-                                  valueColor: AlwaysStoppedAnimation(
-                                      AppColors.white),
+                                  valueColor: AlwaysStoppedAnimation(AppColors.white),
                                 ),
                               )
                                   : Text(
                                 'KAYIT OL',
-                                style: AppTextStyle.MIDDLE_BUTTON_TEXT
-                                    .copyWith(
-                                  fontSize:16,
-                                  fontWeight:FontWeight.bold,
-                                  letterSpacing:0,
+                                style: AppTextStyle.MIDDLE_BUTTON_TEXT.copyWith(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
@@ -291,29 +295,19 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
                 SizedBox(height: padVmedium),
 
-                // veya ile devam et
+                // Veya ile devam et
                 Row(
                   children: [
-                    Expanded(
-                      child: Divider(
-                        color: AppColors.greyMedium,
-                        thickness: 0.5,
-                      ),
-                    ),
+                    Expanded(child: Divider(color: AppColors.greyMedium)),
                     Padding(
-                      padding: EdgeInsets.symmetric(horizontal: padH*0.5),
+                      padding: EdgeInsets.symmetric(horizontal: padH * 0.5),
                       child: Text(
                         "Veya ile devam et",
                         style: AppTextStyle.MINI_DESCRIPTION_TEXT
                             .copyWith(color: AppColors.greyText),
                       ),
                     ),
-                    Expanded(
-                      child: Divider(
-                        color: AppColors.greyMedium,
-                        thickness: 0.5,
-                      ),
-                    ),
+                    Expanded(child: Divider(color: AppColors.greyMedium)),
                   ],
                 ),
                 SizedBox(height: padVsmall),
@@ -322,12 +316,12 @@ class _SignupScreenState extends State<SignupScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: const [
-                    SquareBox(imagePath:"assets/images/google.png"),
+                    SquareBox(imagePath: "assets/images/google.png"),
                   ],
                 ),
                 SizedBox(height: padVmedium),
 
-                // zaten hesabın var mı?
+                // Zaten hesabın var mı?
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -338,9 +332,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     GestureDetector(
                       onTap: () => Navigator.pushReplacement(
                         context,
-                        MaterialPageRoute(
-                          builder: (_) => const LoginScreen(),
-                        ),
+                        MaterialPageRoute(builder: (_) => const LoginScreen()),
                       ),
                       child: Text(
                         "Giriş Yap",

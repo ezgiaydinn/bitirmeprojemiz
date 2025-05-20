@@ -1,13 +1,23 @@
 // lib/screens/login_screen.dart
+
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../constant/app_text_style.dart';
 import 'package:bitirmeprojesi/constant/app_colors.dart';
-import '../screens/forgot_password.dart';
-import '../screens/home_page.dart';
-import '../screens/signup_secreen.dart';
+import 'forgot_password.dart';
+import 'home_page.dart';
+import 'signup_secreen.dart';
+
+// 🔄 BASE_URL sabiti: import’lardan **sonra**,
+const String kBaseUrl =
+String.fromEnvironment(
+  'API_URL',
+  defaultValue:
+  'https://projembackend-production-4549.up.railway.app',
+);
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -17,13 +27,13 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final _formKey           = GlobalKey<FormState>();
+  final _emailController   = TextEditingController();
+  final _passwordController= TextEditingController();
 
-  bool _isLoading = false;
-  bool _obscurePassword = true;
-  String _errorMessage = '';
+  bool   _isLoading        = false;
+  bool   _obscurePassword  = true;
+  String _errorMessage     = '';
 
   @override
   void dispose() {
@@ -37,25 +47,24 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
-      _isLoading = true;
+      _isLoading    = true;
       _errorMessage = '';
     });
 
-    const baseUrl = 'https://projembackend-production-4549.up.railway.app';
-
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/api/auth/login'),
+        Uri.parse('$kBaseUrl/api/auth/login'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'email': _emailController.text.trim(),
+          'email':    _emailController.text.trim(),
           'password': _passwordController.text.trim(),
         }),
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final data   = jsonDecode(response.body);
         final userId = data['user']['id'].toString();
+
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString("userId", userId);
 
@@ -63,14 +72,16 @@ class _LoginScreenState extends State<LoginScreen> {
           context,
           MaterialPageRoute(
             builder: (_) => HomePageScreen(
-              name: _emailController.text.trim(),
+              name:   _emailController.text.trim(),
               userId: userId,
             ),
           ),
         );
       } else {
+        // 🔄 Sunucudan dönen `error` mesajını göster
+        final data = jsonDecode(response.body);
         setState(() {
-          _errorMessage = 'Giriş başarısız. Bilgileri kontrol edin.';
+          _errorMessage = data['error'] ?? 'Giriş başarısız.';
         });
       }
     } catch (_) {
@@ -85,18 +96,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // 1) MediaQuery ile ekran boyutunu al
     final size = MediaQuery.of(context).size;
-    final w = size.width;
-    final h = size.height;
+    final w    = size.width;
+    final h    = size.height;
 
-    // 2) Orantılı değerleri tanımla
-    final logoSize     = w * 0.25;   // ekran genişliğinin %25’i
-    final padH         = w * 0.06;   // yatay padding
-    final padVsmall    = h * 0.02;   // küçük dikey boşluk
-    final padVmedium   = h * 0.04;   // orta dikey boşluk
-    final padVlarge    = h * 0.08;   // büyük dikey boşluk
-    final buttonHeight = h * 0.06;   // buton yüksekliği
+    final logoSize     = w * 0.25;
+    final padH         = w * 0.06;
+    final padVsmall    = h * 0.02;
+    final padVmedium   = h * 0.04;
+    final padVlarge    = h * 0.08;
+    final buttonHeight = h * 0.06;
 
     return Scaffold(
       body: Container(
@@ -104,7 +113,7 @@ class _LoginScreenState extends State<LoginScreen> {
           gradient: LinearGradient(
             colors: [AppColors.backgroundLight, AppColors.backgroundDark],
             begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+            end:   Alignment.bottomCenter,
           ),
         ),
         child: SafeArea(
@@ -113,22 +122,17 @@ class _LoginScreenState extends State<LoginScreen> {
               padding: EdgeInsets.symmetric(horizontal: padH),
               child: Column(
                 children: [
-                  // Üst boşluk
                   SizedBox(height: padVlarge),
-
-                  // Logo (dinamik boyutlu)
                   ClipRRect(
                     borderRadius: BorderRadius.circular(16),
                     child: Image.asset(
                       "assets/images/logo.png",
-                      width: logoSize,
+                      width:  logoSize,
                       height: logoSize,
-                      fit: BoxFit.cover,
+                      fit:    BoxFit.cover,
                     ),
                   ),
                   SizedBox(height: padVmedium),
-
-                  // Form Kart
                   Card(
                     elevation: 6,
                     shape: RoundedRectangleBorder(
@@ -141,14 +145,13 @@ class _LoginScreenState extends State<LoginScreen> {
                         key: _formKey,
                         child: Column(
                           children: [
-                            // E-posta
                             TextFormField(
                               controller: _emailController,
                               keyboardType: TextInputType.emailAddress,
                               decoration: InputDecoration(
-                                hintText: 'E-posta',
-                                prefixIcon: const Icon(Icons.mail_outline),
-                                border: OutlineInputBorder(
+                                hintText:    'E-posta',
+                                prefixIcon:  const Icon(Icons.mail_outline),
+                                border:      OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
@@ -164,23 +167,19 @@ class _LoginScreenState extends State<LoginScreen> {
                               },
                             ),
                             SizedBox(height: padVsmall),
-
-                            // Şifre
                             TextFormField(
                               controller: _passwordController,
                               obscureText: _obscurePassword,
                               decoration: InputDecoration(
-                                hintText: 'Şifre',
+                                hintText:   'Şifre',
                                 prefixIcon: const Icon(Icons.lock_outline),
                                 suffixIcon: IconButton(
                                   icon: Icon(_obscurePassword
                                       ? Icons.visibility_off
                                       : Icons.visibility),
-                                  onPressed: () {
-                                    setState(() {
-                                      _obscurePassword = !_obscurePassword;
-                                    });
-                                  },
+                                  onPressed: () => setState(() {
+                                    _obscurePassword = !_obscurePassword;
+                                  }),
                                 ),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
@@ -197,8 +196,6 @@ class _LoginScreenState extends State<LoginScreen> {
                               },
                             ),
                             SizedBox(height: padVsmall),
-
-                            // Şifremi Unuttum?
                             Align(
                               alignment: Alignment.centerRight,
                               child: GestureDetector(
@@ -211,14 +208,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                                 child: Text(
                                   "Şifremi Unuttum?",
-                                  style:
-                                  AppTextStyle.MINI_BOLD_DESCRIPTION_TEXT,
+                                  style: AppTextStyle
+                                      .MINI_BOLD_DESCRIPTION_TEXT,
                                 ),
                               ),
                             ),
                             SizedBox(height: padVmedium),
-
-                            // Giriş Yap Butonu
                             SizedBox(
                               width: double.infinity,
                               height: buttonHeight,
@@ -244,25 +239,24 @@ class _LoginScreenState extends State<LoginScreen> {
                                   style: AppTextStyle
                                       .MIDDLE_BUTTON_TEXT
                                       .copyWith(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
+                                    fontSize:    16,
+                                    fontWeight:  FontWeight.bold,
                                     letterSpacing: 0,
                                   ),
                                 ),
                               ),
                             ),
                             SizedBox(height: padVsmall),
-
-                            // Hata Mesajı
                             AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 300),
+                              duration:
+                              const Duration(milliseconds: 300),
                               child: _errorMessage.isEmpty
                                   ? const SizedBox.shrink()
                                   : Text(
                                 _errorMessage,
                                 key: const ValueKey('error'),
                                 style: TextStyle(
-                                  color: AppColors.logoPink,
+                                  color:   AppColors.logoPink,
                                   fontSize: 14,
                                 ),
                               ),
@@ -273,8 +267,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   SizedBox(height: padVsmall),
-
-                  // Kayıt Ol Satırı
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -288,6 +280,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           MaterialPageRoute(
                               builder: (_) =>
                               const SignupScreen()),
+
                         ),
                         child: Text(
                           " Kayıt Ol",

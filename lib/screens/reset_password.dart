@@ -4,10 +4,15 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:http/http.dart' as http;
+
 import 'package:bitirmeprojesi/constant/app_colors.dart';
 import 'package:bitirmeprojesi/constant/app_text_style.dart';
-import 'package:bitirmeprojesi/screens/login_screen.dart';
-import 'package:http/http.dart' as http;
+import 'login_screen.dart';
+
+// 🔄 API adresi sabiti
+const String kBaseUrl =
+    'https://projembackend-production-4549.up.railway.app';
 
 class ResetPasswordScreen extends StatefulWidget {
   const ResetPasswordScreen({super.key});
@@ -17,23 +22,30 @@ class ResetPasswordScreen extends StatefulWidget {
 }
 
 class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
-  final _formKey = GlobalKey<FormState>();
+  final _formKey            = GlobalKey<FormState>();
   final _passwordController = TextEditingController();
-  final _confirmController = TextEditingController();
+  final _confirmController  = TextEditingController();
 
-  bool _isLoading = false;
-  String _message = '';
-
+  bool   _isLoading = false;
   late String token;
-  late String userId;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // deep-link veya route ile gelen token/id’yi al
-    final args = ModalRoute.of(context)!.settings.arguments as Map;
+    // deep-link ile gelen token’i alıyoruz
+    final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
     token = args['token'] as String;
-    userId = args['userId'] as String;
+  }
+
+  // ✅ SnackBar ile geri bildirim gösterme
+  void _showSnackBar(String text, {bool success = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(text),
+        backgroundColor: success ? Colors.green : Colors.red,
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   Future<void> _submitNewPassword() async {
@@ -42,43 +54,39 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
     setState(() {
       _isLoading = true;
-      _message = '';
     });
 
-    const baseUrl = 'https://projembackend-production-4549.up.railway.app';
     try {
       final resp = await http.post(
-        Uri.parse('$baseUrl/api/auth/reset-password'),
+        Uri.parse('$kBaseUrl/api/auth/reset'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'userId': userId,
-          'token': token,
-          'newPassword': _passwordController.text.trim(),
+          'token':    token,
+          'password': _passwordController.text.trim(),
         }),
       );
+
       if (resp.statusCode == 200) {
-        setState(() {
-          _message = 'Şifreniz başarıyla güncellendi.';
-        });
-        // Kısa bir gecikme sonrası login’e yönlendir
-        Future.delayed(const Duration(seconds: 2), () {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const LoginScreen()),
-          );
-        });
+        _showSnackBar('Şifreniz başarıyla değiştirildi.', success: true);
+
+        // 2 sn bekleyip Login ekranına dön
+        await Future.delayed(const Duration(seconds: 2));
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+        );
       } else {
         final data = jsonDecode(resp.body);
-        setState(() {
-          _message = data['error'] ?? 'İşlem sırasında bir hata oluştu.';
-        });
+        final error = data['error'] ?? 'Şifre güncellenemedi.';
+        _showSnackBar(error);
       }
-    } catch (_) {
-      setState(() {
-        _message = 'Sunucuya ulaşılamadı. Lütfen tekrar deneyin.';
-      });
+    } catch (e) {
+      _showSnackBar('Sunucuya ulaşılamadı. Lütfen tekrar deneyin.');
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -91,14 +99,14 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final w = size.width;
-    final h = size.height;
+    final size               = MediaQuery.of(context).size;
+    final w                  = size.width;
+    final h                  = size.height;
     final illustrationHeight = h * 0.25;
-    final logoSize = w * 0.25;
-    final padH = w * 0.06;
-    final padVsmall = h * 0.02;
-    final padVmedium = h * 0.04;
+    final logoSize           = w * 0.25;
+    final padH               = w * 0.06;
+    final padVsmall          = h * 0.02;
+    final padVmedium         = h * 0.04;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
@@ -108,7 +116,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // İllüstrasyon (assets/icons/reset_password.svg ekleyin)
+              // Illustrasyon
               SvgPicture.asset(
                 'assets/icons/reset_password.svg',
                 height: illustrationHeight,
@@ -120,25 +128,22 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 borderRadius: BorderRadius.circular(16),
                 child: Image.asset(
                   'assets/images/logo.png',
-                  width: logoSize,
+                  width:  logoSize,
                   height: logoSize,
-                  fit: BoxFit.cover,
+                  fit:    BoxFit.cover,
                 ),
               ),
               SizedBox(height: padVmedium),
 
               // Başlık
-              Text(
-                'Yeni Şifre Belirle',
-                style: AppTextStyle.HEADING,
-              ),
+              Text('Yeni Şifre Belirle', style: AppTextStyle.HEADING),
               SizedBox(height: padVsmall),
 
               // Açıklama
               Text(
                 'Lütfen yeni şifrenizi girip onaylayın.',
                 textAlign: TextAlign.center,
-                style: AppTextStyle.BODY,
+                style:     AppTextStyle.BODY,
               ),
               SizedBox(height: padVmedium),
 
@@ -161,7 +166,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           obscureText: true,
                           decoration: InputDecoration(
                             hintText: 'Yeni Şifre',
-                            prefixIcon: const Icon(Icons.lock_outline),
+                            prefixIcon: Icon(Icons.lock_outline),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -184,7 +189,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           obscureText: true,
                           decoration: InputDecoration(
                             hintText: 'Şifreyi Onayla',
-                            prefixIcon: const Icon(Icons.lock_outline),
+                            prefixIcon: Icon(Icons.lock_outline),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -214,49 +219,34 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                               elevation: 4,
                             ),
                             child: _isLoading
-                                ? const CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation(
-                                  AppColors.white),
+                                ? CircularProgressIndicator(
+                              valueColor:
+                              AlwaysStoppedAnimation(AppColors.white),
                             )
                                 : Text(
                               'Şifreyi Güncelle',
                               style: AppTextStyle.MIDDLE_BUTTON_TEXT
                                   .copyWith(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
+                                fontSize:     16,
+                                fontWeight:   FontWeight.bold,
                                 letterSpacing: 0,
                               ),
                             ),
                           ),
                         ),
-
-                        // Durum mesajı
-                        if (_message.isNotEmpty) ...[
-                          SizedBox(height: padVsmall),
-                          Text(
-                            _message,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: _message
-                                  .startsWith('Şifreniz başarıyla')
-                                  ? AppColors.logoMint
-                                  : AppColors.logoPink,
-                            ),
-                          ),
-                        ],
                       ],
                     ),
                   ),
                 ),
               ),
+
               SizedBox(height: padVmedium),
 
-              // Giriş ekranına dön
+              // Login ekranına dön
               TextButton(
                 onPressed: () => Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(
-                      builder: (_) => const LoginScreen()),
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
                 ),
                 child: Text(
                   'Giriş Ekranına Dön',
