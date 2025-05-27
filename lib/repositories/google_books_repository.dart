@@ -24,18 +24,16 @@ class GoogleBooksRepository {
     }
   }
 
-  // --- ÖNEMLİ KISIM: tüm alanları parse ediyoruz ---
   Book _parseBook(dynamic item) {
     final info = (item['volumeInfo'] ?? {}) as Map<String, dynamic>;
 
-    // ISBN’leri listeye çevir
     final ids =
         (info['industryIdentifiers'] as List<dynamic>?)
             ?.map((e) => (e as Map<String, dynamic>)['identifier'] as String?)
             .whereType<String>()
             .toList();
 
-    // Küçük http→https düzeltmesi
+
     String thumb = info['imageLinks']?['thumbnail'] ?? '';
     if (thumb.startsWith('http:'))
       thumb = thumb.replaceFirst('http:', 'https:');

@@ -1,5 +1,3 @@
-// lib/models/book.dart
-
 class Book {
   final String id;
   final String title;
@@ -7,13 +5,10 @@ class Book {
   final String thumbnailUrl;
   final String description;
   final List<String> categories;
-
-  // Yeni eklenen alanlar
   final String? publisher;
   final String? publishedDate;
   final int? pageCount;
   final List<String>? industryIdentifiers;
-
   final double? averageRating;
   final int? ratingsCount;
 
@@ -39,14 +34,12 @@ class Book {
       final cats =
           (info['categories'] as List<dynamic>?)?.cast<String>() ?? <String>[];
 
-      // ISBN listesi
       final identifiers =
           (info['industryIdentifiers'] as List<dynamic>?)
               ?.map((e) => (e as Map<String, dynamic>)['identifier'] as String?)
               .whereType<String>()
               .toList();
 
-      // Thumbnail HTTPS dönüşümü
       String thumb = (info['imageLinks']?['thumbnail'] as String?) ?? '';
       if (thumb.startsWith('http:')) {
         thumb = thumb.replaceFirst('http:', 'https:');
