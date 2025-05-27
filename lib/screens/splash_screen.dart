@@ -18,9 +18,9 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
-  late final Animation<double>   _animation;
-  late final AppLinks            _appLinks;
-  StreamSubscription<Uri?>?      _sub;
+  late final Animation<double> _animation;
+  late final AppLinks _appLinks;
+  StreamSubscription<Uri?>? _sub;
 
   bool _routedByDeepLink = false;
 
@@ -33,8 +33,10 @@ class _SplashScreenState extends State<SplashScreen>
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     )..repeat(reverse: true);
-    _animation = Tween(begin: .8, end: 1.2)
-        .animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+    _animation = Tween(
+      begin: .8,
+      end: 1.2,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
 
     // 2) Deep-link’leri dinlemeye başla
     _initDeepLinks();
@@ -56,14 +58,11 @@ class _SplashScreenState extends State<SplashScreen>
     if (_routedByDeepLink || uri == null) return false;
 
     final scheme = uri.scheme;
-    final host   = uri.host;
-    final qp     = uri.queryParameters;
+    final host = uri.host;
+    final qp = uri.queryParameters;
 
     // --- Reset şifre deep-link’i ---
-    if (scheme == 'bookifyapp' &&
-        host   == 'reset' &&
-        qp.containsKey('token')) {
-
+    if (scheme == 'bookifyapp' && host == 'reset' && qp.containsKey('token')) {
       final token = qp['token']!;
       _routedByDeepLink = true;
       _controller.dispose();
@@ -78,10 +77,7 @@ class _SplashScreenState extends State<SplashScreen>
     }
 
     // --- E-posta doğrulama deep-link’i ---
-    if (scheme == 'bookifyapp' &&
-        host   == 'verify' &&
-        qp.containsKey('token')) {
-
+    if (scheme == 'bookifyapp' && host == 'verify' && qp.containsKey('token')) {
       final token = qp['token']!;
       _routedByDeepLink = true;
       _controller.dispose();
@@ -107,7 +103,7 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    final w        = MediaQuery.of(context).size.width;
+    final w = MediaQuery.of(context).size.width;
     final logoSize = w * .4;
 
     // 3) 3 sn sonra normal login’e git (deep-link yoksa)

@@ -19,16 +19,16 @@ class SignupScreen extends StatefulWidget {
 }
 
 class _SignupScreenState extends State<SignupScreen> {
-  final _formKey                 = GlobalKey<FormState>();
-  final nameController           = TextEditingController();
-  final emailController          = TextEditingController();
-  final passwordController       = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final nameController = TextEditingController();
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
   final repeatPasswordController = TextEditingController();
 
-  bool   _isLoading       = false;
-  bool   _obscurePassword = true;
-  bool   _obscureRepeat   = true;
-  String errorMessage     = '';
+  bool _isLoading = false;
+  bool _obscurePassword = true;
+  bool _obscureRepeat = true;
+  String errorMessage = '';
 
   @override
   void dispose() {
@@ -44,19 +44,19 @@ class _SignupScreenState extends State<SignupScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
-      _isLoading   = true;
+      _isLoading = true;
       errorMessage = '';
     });
 
-    final name     = nameController.text.trim();
-    final email    = emailController.text.trim();
+    final name = nameController.text.trim();
+    final email = emailController.text.trim();
     final password = passwordController.text.trim();
-    final repeat   = repeatPasswordController.text.trim();
+    final repeat = repeatPasswordController.text.trim();
 
     if (password != repeat) {
       setState(() {
         errorMessage = 'Şifreler eşleşmiyor.';
-        _isLoading   = false;
+        _isLoading = false;
       });
       return;
     }
@@ -65,11 +65,7 @@ class _SignupScreenState extends State<SignupScreen> {
       final resp = await http.post(
         Uri.parse('$kBaseUrl/api/auth/signup'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'name':     name,
-          'email':    email,
-          'password': password,
-        }),
+        body: jsonEncode({'name': name, 'email': email, 'password': password}),
       );
 
       if (resp.statusCode == 201) {
@@ -107,13 +103,13 @@ class _SignupScreenState extends State<SignupScreen> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final w    = size.width;
-    final h    = size.height;
+    final w = size.width;
+    final h = size.height;
 
-    final logoSize     = w * 0.25;
-    final padH         = w * 0.06;
-    final padVsmall    = h * 0.02;
-    final padVmedium   = h * 0.04;
+    final logoSize = w * 0.25;
+    final padH = w * 0.06;
+    final padVsmall = h * 0.02;
+    final padVmedium = h * 0.04;
     final buttonHeight = h * 0.06;
 
     return Scaffold(
@@ -133,9 +129,9 @@ class _SignupScreenState extends State<SignupScreen> {
                   borderRadius: BorderRadius.circular(16),
                   child: Image.asset(
                     "assets/images/logo.png",
-                    width:  logoSize,
+                    width: logoSize,
                     height: logoSize,
-                    fit:    BoxFit.cover,
+                    fit: BoxFit.cover,
                   ),
                 ),
                 SizedBox(height: padVmedium),
@@ -163,10 +159,11 @@ class _SignupScreenState extends State<SignupScreen> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            validator: (v) =>
-                            (v == null || v.isEmpty)
-                                ? 'Kullanıcı adı boş olamaz'
-                                : null,
+                            validator:
+                                (v) =>
+                                    (v == null || v.isEmpty)
+                                        ? 'Kullanıcı adı boş olamaz'
+                                        : null,
                           ),
                           SizedBox(height: padVsmall),
 
@@ -184,8 +181,9 @@ class _SignupScreenState extends State<SignupScreen> {
                             validator: (v) {
                               if (v == null || v.isEmpty)
                                 return 'E-posta boş olamaz';
-                              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w]{2,4}$')
-                                  .hasMatch(v)) {
+                              if (!RegExp(
+                                r'^[\w-\.]+@([\w-]+\.)+[\w]{2,4}$',
+                              ).hasMatch(v)) {
                                 return 'Geçerli bir e-posta girin';
                               }
                               return null;
@@ -201,11 +199,16 @@ class _SignupScreenState extends State<SignupScreen> {
                               hintText: 'Şifre',
                               prefixIcon: const Icon(Icons.lock_outline),
                               suffixIcon: IconButton(
-                                icon: Icon(_obscurePassword
-                                    ? Icons.visibility_off
-                                    : Icons.visibility),
-                                onPressed: () =>
-                                    setState(() => _obscurePassword = !_obscurePassword),
+                                icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                ),
+                                onPressed:
+                                    () => setState(
+                                      () =>
+                                          _obscurePassword = !_obscurePassword,
+                                    ),
                               ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -214,8 +217,7 @@ class _SignupScreenState extends State<SignupScreen> {
                             validator: (v) {
                               if (v == null || v.isEmpty)
                                 return 'Şifre boş olamaz';
-                              if (v.length < 6)
-                                return 'En az 6 karakter girin';
+                              if (v.length < 6) return 'En az 6 karakter girin';
                               return null;
                             },
                           ),
@@ -229,11 +231,15 @@ class _SignupScreenState extends State<SignupScreen> {
                               hintText: 'Şifreyi Tekrarla',
                               prefixIcon: const Icon(Icons.lock),
                               suffixIcon: IconButton(
-                                icon: Icon(_obscureRepeat
-                                    ? Icons.visibility_off
-                                    : Icons.visibility),
-                                onPressed: () =>
-                                    setState(() => _obscureRepeat = !_obscureRepeat),
+                                icon: Icon(
+                                  _obscureRepeat
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                ),
+                                onPressed:
+                                    () => setState(
+                                      () => _obscureRepeat = !_obscureRepeat,
+                                    ),
                               ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -242,8 +248,7 @@ class _SignupScreenState extends State<SignupScreen> {
                             validator: (v) {
                               if (v == null || v.isEmpty)
                                 return 'Tekrar şifre boş olamaz';
-                              if (v.length < 6)
-                                return 'En az 6 karakter girin';
+                              if (v.length < 6) return 'En az 6 karakter girin';
                               return null;
                             },
                           ),
@@ -266,26 +271,30 @@ class _SignupScreenState extends State<SignupScreen> {
                             child: ElevatedButton(
                               onPressed: _isLoading ? null : signupUser,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.accent,
+                                backgroundColor: Colors.deepPurple.shade200,
                                 foregroundColor: AppColors.white,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 elevation: 4,
                               ),
-                              child: _isLoading
-                                  ? const Center(
-                                child: CircularProgressIndicator(
-                                  valueColor: AlwaysStoppedAnimation(AppColors.white),
-                                ),
-                              )
-                                  : Text(
-                                'KAYIT OL',
-                                style: AppTextStyle.MIDDLE_BUTTON_TEXT.copyWith(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                              child:
+                                  _isLoading
+                                      ? const Center(
+                                        child: CircularProgressIndicator(
+                                          valueColor: AlwaysStoppedAnimation(
+                                            AppColors.white,
+                                          ),
+                                        ),
+                                      )
+                                      : Text(
+                                        'KAYIT OL',
+                                        style: AppTextStyle.MIDDLE_BUTTON_TEXT
+                                            .copyWith(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                      ),
                             ),
                           ),
                         ],
@@ -303,8 +312,9 @@ class _SignupScreenState extends State<SignupScreen> {
                       padding: EdgeInsets.symmetric(horizontal: padH * 0.5),
                       child: Text(
                         "Veya ile devam et",
-                        style: AppTextStyle.MINI_DESCRIPTION_TEXT
-                            .copyWith(color: AppColors.greyText),
+                        style: AppTextStyle.MINI_DESCRIPTION_TEXT.copyWith(
+                          color: AppColors.greyText,
+                        ),
                       ),
                     ),
                     Expanded(child: Divider(color: AppColors.greyMedium)),
@@ -330,14 +340,17 @@ class _SignupScreenState extends State<SignupScreen> {
                       style: AppTextStyle.MINI_DEFAULT_DESCRIPTION_TEXT,
                     ),
                     GestureDetector(
-                      onTap: () => Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (_) => const LoginScreen()),
-                      ),
+                      onTap:
+                          () => Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const LoginScreen(),
+                            ),
+                          ),
                       child: Text(
                         "Giriş Yap",
                         style: AppTextStyle.MINI_DESCRIPTION_TEXT.copyWith(
-                          color: AppColors.accent,
+                          color: Colors.deepPurple.shade200,
                           fontWeight: FontWeight.bold,
                         ),
                       ),

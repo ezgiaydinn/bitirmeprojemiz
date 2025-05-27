@@ -1,5 +1,15 @@
 // lib/models/book.dart
 
+import 'dart:convert';
+
+String fixEncoding(String text) {
+  try {
+    return utf8.decode(latin1.encode(text));
+  } catch (_) {
+    return text;
+  }
+}
+
 class Book {
   final String id;
   final String title;
@@ -13,9 +23,9 @@ class Book {
   final String? publishedDate;
   final int? pageCount;
   final List<String>? industryIdentifiers;
-
   final double? averageRating;
   final int? ratingsCount;
+  final String? source;
 
   Book({
     required this.id,
@@ -30,9 +40,11 @@ class Book {
     this.industryIdentifiers,
     this.averageRating,
     this.ratingsCount,
+    this.source,
   });
 
   factory Book.fromJson(Map<String, dynamic> json) {
+    print("🧾 Gelen kitap verisi: $json");
     //final info = (json['volumeInfo'] as Map<String, dynamic>?) ?? {};
     if (json.containsKey('volumeInfo')) {
       final info = (json['volumeInfo'] as Map<String, dynamic>?) ?? {};
@@ -51,40 +63,117 @@ class Book {
       if (thumb.startsWith('http:')) {
         thumb = thumb.replaceFirst('http:', 'https:');
       }
-      return Book(
+      /*return Book(
         id: json['id'] as String,
-        title: info['title'] as String? ?? '—',
-        authors:
+        //title: info['title'] as String? ?? '—',
+        title: json['title'] ?? 'Bilinmeyen Başlık',
+        /*authors:
             (info['authors'] as List<dynamic>?)?.cast<String>() ??
-            ['Bilinmeyen yazar'],
-        thumbnailUrl: thumb,
-        description: info['description'] as String? ?? 'Açıklama bulunamadı.',
+            ['Bilinmeyen yazar'],*/
+        authors: _parseAuthors(json['authors']),
+        thumbnailUrl: json['thumbnail_url'] ?? '',
+        description: json['description'] ?? '',
         categories: cats,
-        publisher: info['publisher'] as String?,
-        publishedDate: info['publishedDate'] as String?,
-        pageCount: info['pageCount'] as int?,
+        publisher: json['publisher'] ?? '',
+        publishedDate: json['published_date']?.toString() ?? '',
+        pageCount: json['pageCount'] ?? 0,
         industryIdentifiers: identifiers,
-        averageRating: (info['averageRating'] as num?)?.toDouble(),
+        averageRating:
+            (json['average_rating'] is num)
+                ? json['average_rating'].toDouble()
+                : null,
         ratingsCount: info['ratingsCount'] as int?,
+      );*/
+      return Book(
+        id: json['book_id']?.toString() ?? '',
+        title: fixEncoding(json['title'] ?? 'Başlık yok'),
+        authors: Book._parseAuthors(json['authors']),
+        thumbnailUrl: json['thumbnail_url'] ?? '',
+        description: fixEncoding(json['description'] ?? ''),
+        categories: [], // ya da json'dan geliyorsa oradan çek
+        publisher: fixEncoding(json['publisher'] ?? ''),
+        publishedDate: json['publishedDate']?.toString() ?? '',
+        pageCount: json['pageCount'] is int ? json['pageCount'] : 0,
+        industryIdentifiers: [], // ya da parse et
+        averageRating:
+            json['averageRating'] is num
+                ? json['averageRating'].toDouble()
+                : null,
+        ratingsCount: json['ratingsCount'] is int ? json['ratingsCount'] : 0,
+        source: json['source'],
       );
     } else {
       return Book(
-        id: json['id'] as String,
-        title: json['title'] as String? ?? '—',
-        authors:
-            (json['authors'] as List<dynamic>?)?.cast<String>() ??
-            ['Bilinmeyen yazar'],
-        thumbnailUrl: json['thumbnailUrl'] as String? ?? '',
-        description: json['description'] as String? ?? '',
-        publisher: json['publisher'] as String?,
-        publishedDate: json['publishedDate'] as String?,
-        pageCount: json['pageCount'] as int?,
+        /*id: json['id'] as String,
+        title: json['title'] ?? 'Bilinmeyen Başlık',
+        authors: _parseAuthors(json['authors']),
+        thumbnailUrl: json['thumbnail_url'] ?? '',
+        description: json['description'] ?? '',
+        publisher: json['publisher'] ?? '',
+        publishedDate: json['published_date']?.toString() ?? '',
+        pageCount: json['pageCount'] ?? 0,
         industryIdentifiers:
             (json['industryIdentifiers'] as List<dynamic>?)?.cast<String>(),
-        averageRating: (json['averageRating'] as num?)?.toDouble(),
+        averageRating:
+            (json['average_rating'] is num)
+                ? json['average_rating'].toDouble()
+                : null,
         ratingsCount: json['ratingsCount'] as int?,
-        categories: <String>[],
+        categories: <String>[],*/
+        id: json['book_id']?.toString() ?? '',
+        title: fixEncoding(json['title'] ?? 'Başlık yok'),
+        authors: Book._parseAuthors(json['authors']),
+        thumbnailUrl: json['thumbnail_url'] ?? '',
+        description: fixEncoding(json['description'] ?? ''),
+        categories: [], // ya da json'dan geliyorsa oradan çek
+        publisher: fixEncoding(json['publisher'] ?? ''),
+        publishedDate: json['publishedDate']?.toString() ?? '',
+        pageCount: json['pageCount'] is int ? json['pageCount'] : 0,
+        industryIdentifiers: [], // ya da parse et
+        averageRating:
+            json['averageRating'] is num
+                ? json['averageRating'].toDouble()
+                : null,
+        ratingsCount: json['ratingsCount'] is int ? json['ratingsCount'] : 0,
+        source: json['source'],
       );
     }
+  }
+  static List<String> _parseAuthors(dynamic rawAuthors) {
+    if (rawAuthors == null) return [];
+    if (rawAuthors is String) {
+      try {
+        final decoded = jsonDecode(rawAuthors);
+        if (decoded is List) return List<String>.from(decoded);
+      } catch (_) {
+        return [rawAuthors];
+      }
+    } else if (rawAuthors is List) {
+      return List<String>.from(rawAuthors);
+    }
+    return [];
+  }
+}
+
+class RecommendedBook {
+  final String title;
+  final List<String> authors;
+  final String thumbnailUrl;
+  final double score;
+
+  RecommendedBook({
+    required this.title,
+    required this.authors,
+    required this.thumbnailUrl,
+    required this.score,
+  });
+
+  factory RecommendedBook.fromJson(Map<String, dynamic> json) {
+    return RecommendedBook(
+      title: json['title'],
+      authors: List<String>.from(json['authors']),
+      thumbnailUrl: json['thumbnail_url'],
+      score: json['score'].toDouble(),
+    );
   }
 }

@@ -110,7 +110,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
       children: [
         Scaffold(
           appBar: AppBar(
-            backgroundColor: AppColors.accent,
+            backgroundColor: Colors.deepPurple.shade200,
             elevation: 0,
             title: Text(
               'Kütüphane',
@@ -191,7 +191,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                             ),
                             trailing: ElevatedButton.icon(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.accent,
+                                backgroundColor: Colors.deepPurple.shade200,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
