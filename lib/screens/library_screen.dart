@@ -45,6 +45,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
       final res = await http.get(url);
       if (res.statusCode == 200) {
         final List data = jsonDecode(res.body);
+        print('Library JSON ➔ $data');
         setState(() {
           _library =
               data.map((e) {
@@ -186,6 +187,15 @@ class _LibraryScreenState extends State<LibraryScreen> {
                                       ),
                                     ),
                                   ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    b.description,
+                                    style: AppTextStyle
+                                        .MINI_DEFAULT_DESCRIPTION_TEXT
+                                        .copyWith(fontStyle: FontStyle.italic),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ],
                               ],
                             ),
@@ -214,6 +224,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                                         onToggleFavorite: (_) {},
                                         onToggleLibrary: (_) {},
                                         onRate: widget.onRate,
+                                        key: UniqueKey(),
                                       ),
                                 ),
                               );

@@ -368,6 +368,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
                   elevation: 4,
                   borderRadius: BorderRadius.circular(30),
                   child: TextField(
+                    textInputAction: TextInputAction.search,
                     decoration: InputDecoration(
                       hintText: 'Kitap ara...',
                       hintStyle: TextStyle(color: Colors.grey[600]),
@@ -388,6 +389,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
                     ),
                     onSubmitted: (q) {
                       setState(() => _futureBooks = _repo.fetchBooks(q));
+                      FocusScope.of(context).unfocus();
                     },
                   ),
                 ),
