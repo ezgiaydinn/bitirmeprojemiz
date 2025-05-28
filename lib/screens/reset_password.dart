@@ -69,7 +69,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       if (resp.statusCode == 200) {
         _showSnackBar('Şifreniz başarıyla değiştirildi.', success: true);
 
-        // 2 sn bekleyip Login ekranına dön
         await Future.delayed(const Duration(seconds: 2));
         if (!mounted) return;
         Navigator.pushReplacement(
@@ -84,9 +83,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     } catch (e) {
       _showSnackBar('Sunucuya ulaşılamadı. Lütfen tekrar deneyin.');
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -110,153 +107,160 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
+      // klavye açıldığında overflow'u önlemek için
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: padH),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Illustrasyon
-              SvgPicture.asset(
-                'assets/icons/reset_password.svg',
-                height: illustrationHeight,
-              ),
-              SizedBox(height: padVmedium),
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: h - MediaQuery.of(context).padding.vertical,
+            ),
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: padH),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Illustrasyon
+                  SvgPicture.asset(
+                    'assets/icons/reset_password.svg',
+                    height: illustrationHeight,
+                  ),
+                  SizedBox(height: padVmedium),
 
-              // Logo
-              ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Image.asset(
-                  'assets/images/logo.png',
-                  width:  logoSize,
-                  height: logoSize,
-                  fit:    BoxFit.cover,
-                ),
-              ),
-              SizedBox(height: padVmedium),
-
-              // Başlık
-              Text('Yeni Şifre Belirle', style: AppTextStyle.HEADING),
-              SizedBox(height: padVsmall),
-
-              // Açıklama
-              Text(
-                'Lütfen yeni şifrenizi girip onaylayın.',
-                textAlign: TextAlign.center,
-                style:     AppTextStyle.BODY,
-              ),
-              SizedBox(height: padVmedium),
-
-              // Form kartı
-              Card(
-                elevation: 6,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                color: AppColors.white,
-                child: Padding(
-                  padding: EdgeInsets.all(padH),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      children: [
-                        // Yeni şifre
-                        TextFormField(
-                          controller: _passwordController,
-                          obscureText: true,
-                          decoration: InputDecoration(
-                            hintText: 'Yeni Şifre',
-                            prefixIcon: Icon(Icons.lock_outline),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          validator: (v) {
-                            if (v == null || v.isEmpty) {
-                              return 'Şifre boş olamaz';
-                            }
-                            if (v.length < 6) {
-                              return 'En az 6 karakter girin';
-                            }
-                            return null;
-                          },
-                        ),
-                        SizedBox(height: padVmedium),
-
-                        // Şifre onay
-                        TextFormField(
-                          controller: _confirmController,
-                          obscureText: true,
-                          decoration: InputDecoration(
-                            hintText: 'Şifreyi Onayla',
-                            prefixIcon: Icon(Icons.lock_outline),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          validator: (v) {
-                            if (v != _passwordController.text) {
-                              return 'Şifreler eşleşmiyor';
-                            }
-                            return null;
-                          },
-                        ),
-                        SizedBox(height: padVmedium),
-
-                        // Gönder butonu
-                        SizedBox(
-                          width: double.infinity,
-                          height: h * 0.06,
-                          child: ElevatedButton(
-                            onPressed:
-                            _isLoading ? null : _submitNewPassword,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.accent,
-                              foregroundColor: AppColors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 4,
-                            ),
-                            child: _isLoading
-                                ? CircularProgressIndicator(
-                              valueColor:
-                              AlwaysStoppedAnimation(AppColors.white),
-                            )
-                                : Text(
-                              'Şifreyi Güncelle',
-                              style: AppTextStyle.MIDDLE_BUTTON_TEXT
-                                  .copyWith(
-                                fontSize:     16,
-                                fontWeight:   FontWeight.bold,
-                                letterSpacing: 0,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                  // Logo
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Image.asset(
+                      'assets/images/logo.png',
+                      width:  logoSize,
+                      height: logoSize,
+                      fit:    BoxFit.cover,
                     ),
                   ),
-                ),
-              ),
+                  SizedBox(height: padVmedium),
 
-              SizedBox(height: padVmedium),
+                  // Başlık
+                  Text('Yeni Şifre Belirle', style: AppTextStyle.HEADING),
+                  SizedBox(height: padVsmall),
 
-              // Login ekranına dön
-              TextButton(
-                onPressed: () => Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                ),
-                child: Text(
-                  'Giriş Ekranına Dön',
-                  style: AppTextStyle.BODY.copyWith(
-                    color: AppColors.accent,
-                    fontWeight: FontWeight.w600,
+                  // Açıklama
+                  Text(
+                    'Lütfen yeni şifrenizi girip onaylayın.',
+                    textAlign: TextAlign.center,
+                    style:     AppTextStyle.BODY,
                   ),
-                ),
+                  SizedBox(height: padVmedium),
+
+                  // Form kartı
+                  Card(
+                    elevation: 6,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    color: AppColors.white,
+                    child: Padding(
+                      padding: EdgeInsets.all(padH),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          children: [
+                            // Yeni şifre
+                            TextFormField(
+                              controller: _passwordController,
+                              obscureText: true,
+                              decoration: InputDecoration(
+                                hintText: 'Yeni Şifre',
+                                prefixIcon: Icon(Icons.lock_outline),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              validator: (v) {
+                                if (v == null || v.isEmpty) {
+                                  return 'Şifre boş olamaz';
+                                }
+                                if (v.length < 6) {
+                                  return 'En az 6 karakter girin';
+                                }
+                                return null;
+                              },
+                            ),
+                            SizedBox(height: padVmedium),
+
+                            // Şifre onay
+                            TextFormField(
+                              controller: _confirmController,
+                              obscureText: true,
+                              decoration: InputDecoration(
+                                hintText: 'Şifreyi Onayla',
+                                prefixIcon: Icon(Icons.lock_outline),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              validator: (v) {
+                                if (v != _passwordController.text) {
+                                  return 'Şifreler eşleşmiyor';
+                                }
+                                return null;
+                              },
+                            ),
+                            SizedBox(height: padVmedium),
+
+                            // Gönder butonu
+                            SizedBox(
+                              width: double.infinity,
+                              height: h * 0.06,
+                              child: ElevatedButton(
+                                onPressed: _isLoading ? null : _submitNewPassword,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.deepPurple.shade200,
+                                  foregroundColor: AppColors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  elevation: 4,
+                                ),
+                                child: _isLoading
+                                    ? CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation(AppColors.white),
+                                )
+                                    : Text(
+                                  'Şifreyi Güncelle',
+                                  style: AppTextStyle.MIDDLE_BUTTON_TEXT.copyWith(
+                                    fontSize:     16,
+                                    fontWeight:   FontWeight.bold,
+                                    letterSpacing: 0,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(height: padVmedium),
+
+                  // Login ekranına dön
+                  TextButton(
+                    onPressed: () => Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    ),
+                    child: Text(
+                      'Giriş Ekranına Dön',
+                      style: AppTextStyle.BODY.copyWith(
+                        color: Colors.deepPurple.shade200,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
