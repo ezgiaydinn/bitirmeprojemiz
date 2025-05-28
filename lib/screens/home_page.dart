@@ -68,6 +68,9 @@ class _HomePageScreenState extends State<HomePageScreen> {
   int _selectedIndex = 1;
   String _displayName = '';
 
+  // 👇 Son aramalar için liste
+  final List<String> _recentSearches = [];
+
   @override
   void initState() {
     super.initState();
@@ -76,6 +79,8 @@ class _HomePageScreenState extends State<HomePageScreen> {
     });
     _loadUserData();
     _futureBooks = null;
+    // Metin değiştiğinde rebuild için listener:
+    _searchController.addListener(() => setState(() {}));
   }
 
   @override
@@ -125,10 +130,18 @@ class _HomePageScreenState extends State<HomePageScreen> {
 
   // 2. Aramayı tetikle
   void _runSearch(String query) {
-    if (query.trim().isEmpty) return;
+    final q = query.trim();
+    if (q.isEmpty) return;
+    // Son aramalar listesine ekle (max 5)
+    if (!_recentSearches.contains(q)) {
+      _recentSearches.insert(0, q);
+      if (_recentSearches.length > 5) {
+        _recentSearches.removeLast();
+      }
+    }
     FocusScope.of(context).unfocus();
     setState(() {
-      _futureBooks = _repo.fetchBooks(query);
+      _futureBooks = _repo.fetchBooks(q);
     });
   }
 
@@ -153,7 +166,6 @@ class _HomePageScreenState extends State<HomePageScreen> {
         MaterialPageRoute(
           builder: (_) => FavoritesScreen(
             userId: widget.userId,
-            // 👇 Map<String,double> → Map<String,int>
             userRatings: _userRatings.map((k, v) => MapEntry(k, v.toInt())),
             onAddToLibrary: (b) {
               if (!mounted) return;
@@ -164,7 +176,6 @@ class _HomePageScreenState extends State<HomePageScreen> {
             },
             onRate: (b, r) {
               if (!mounted) return;
-              // r zaten int geliyor
               setState(() => _userRatings[b.id] = r.toDouble());
             },
           ),
@@ -176,7 +187,6 @@ class _HomePageScreenState extends State<HomePageScreen> {
         MaterialPageRoute(
           builder: (_) => LibraryScreen(
             userId: widget.userId,
-            // 👇 Map<String,double> → Map<String,int>
             userRatings: _userRatings.map((k, v) => MapEntry(k, v.toInt())),
             onRemoveFromLibrary: (b) {
               if (!mounted) return;
@@ -225,7 +235,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
         MaterialPageRoute(
           builder: (_) => RecommendationsScreen(
             fetchRecommendations: fetchRecommendations,
-            userRatings: <String, double>{}, // kendi tipine uygun
+            userRatings: <String, double>{},
             onToggleFavorite: (b) {
               setState(() {
                 if (_favoriteBooks.any((x) => x.id == b.id))
@@ -348,13 +358,25 @@ class _HomePageScreenState extends State<HomePageScreen> {
                     decoration: InputDecoration(
                       hintText: 'Kitap ara...',
                       hintStyle: TextStyle(color: Colors.grey[600]),
-                      prefixIcon: Icon(
-                        Icons.search,
-                        color: AppColors.greyMedium,
-                      ),
-                      suffixIcon: IconButton(
-                        icon: const Icon(Icons.send),
-                        onPressed: () => _runSearch(_searchController.text),
+                      prefixIcon: Icon(Icons.search, color: AppColors.greyMedium),
+                      suffixIcon: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (_searchController.text.isNotEmpty)
+                            IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() {
+                                  _futureBooks = null;
+                                });
+                              },
+                            ),
+                          IconButton(
+                            icon: const Icon(Icons.send),
+                            onPressed: () => _runSearch(_searchController.text),
+                          ),
+                        ],
                       ),
                       filled: true,
                       fillColor: Colors.white,
@@ -372,27 +394,43 @@ class _HomePageScreenState extends State<HomePageScreen> {
                 ),
               ),
 
-              // —— Kitap Listesi ——
+              // —— Kitap Listesi veya Son Aramalar ——
               Expanded(
                 child: _futureBooks == null
+                    ? (_recentSearches.isEmpty
                     ? Center(
                   child: Text(
                     'Bir kitap arayın...',
-                    style:
-                    AppTextStyle.BODY.copyWith(color: Colors.grey[700]),
+                    style: AppTextStyle.BODY.copyWith(color: Colors.grey[700]),
                   ),
                 )
+                    : ListView.separated(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: w * 0.05,
+                    vertical: h * 0.02,
+                  ),
+                  itemCount: _recentSearches.length,
+                  separatorBuilder: (_, __) => const Divider(),
+                  itemBuilder: (ctx, i) {
+                    final term = _recentSearches[i];
+                    return ListTile(
+                      leading: const Icon(Icons.history),
+                      title: Text(term),
+                      onTap: () {
+                        _searchController.text = term;
+                        _runSearch(term);
+                      },
+                    );
+                  },
+                ))
                     : FutureBuilder<List<Book>>(
                   future: _futureBooks,
                   builder: (ctx, snap) {
                     if (snap.connectionState != ConnectionState.done) {
-                      return const Center(
-                          child: CircularProgressIndicator());
+                      return const Center(child: CircularProgressIndicator());
                     }
                     if (snap.hasError) {
-                      return Center(
-                          child: Text('Hata: ${snap.error}',
-                              style: AppTextStyle.BODY));
+                      return Center(child: Text('Hata: ${snap.error}', style: AppTextStyle.BODY));
                     }
                     final books = snap.data ?? [];
                     return GridView.builder(
@@ -400,8 +438,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
                         horizontal: w * 0.05,
                         vertical: h * 0.02,
                       ),
-                      gridDelegate:
-                      SliverGridDelegateWithFixedCrossAxisCount(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
                         crossAxisSpacing: w * 0.05,
                         mainAxisSpacing: h * 0.02,
@@ -419,18 +456,14 @@ class _HomePageScreenState extends State<HomePageScreen> {
                               builder: (_) => BookDetailScreen(
                                 userId: widget.userId,
                                 book: b,
-                                isFavorite: _favoriteBooks
-                                    .any((x) => x.id == b.id),
-                                isInLibrary: _libraryBooks
-                                    .any((x) => x.id == b.id),
-                                userRating: rInt, // int olarak
+                                isFavorite: _favoriteBooks.any((x) => x.id == b.id),
+                                isInLibrary: _libraryBooks.any((x) => x.id == b.id),
+                                userRating: rInt,
                                 onToggleFavorite: (bx) {
                                   if (!mounted) return;
                                   setState(() {
-                                    if (_favoriteBooks
-                                        .any((x) => x.id == bx.id))
-                                      _favoriteBooks.removeWhere(
-                                              (x) => x.id == bx.id);
+                                    if (_favoriteBooks.any((x) => x.id == bx.id))
+                                      _favoriteBooks.removeWhere((x) => x.id == bx.id);
                                     else
                                       _favoriteBooks.add(bx);
                                   });
@@ -438,10 +471,8 @@ class _HomePageScreenState extends State<HomePageScreen> {
                                 onToggleLibrary: (bx) {
                                   if (!mounted) return;
                                   setState(() {
-                                    if (_libraryBooks
-                                        .any((x) => x.id == bx.id)) {
-                                      _libraryBooks.removeWhere(
-                                              (x) => x.id == bx.id);
+                                    if (_libraryBooks.any((x) => x.id == bx.id)) {
+                                      _libraryBooks.removeWhere((x) => x.id == bx.id);
                                       _userRatings.remove(bx.id);
                                     } else {
                                       _libraryBooks.add(bx);
@@ -450,36 +481,28 @@ class _HomePageScreenState extends State<HomePageScreen> {
                                 },
                                 onRate: (bx, rating) {
                                   if (!mounted) return;
-                                  setState(() =>
-                                  _userRatings[bx.id] =
-                                      rating.toDouble());
+                                  setState(() => _userRatings[bx.id] = rating.toDouble());
                                 },
                               ),
                             ),
                           ),
                           child: Card(
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                             elevation: 6,
                             margin: const EdgeInsets.all(8),
                             child: Column(
-                              crossAxisAlignment:
-                              CrossAxisAlignment.stretch,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 Expanded(
                                   child: ClipRRect(
-                                    borderRadius: const BorderRadius.vertical(
-                                        top: Radius.circular(16)),
+                                    borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                                     child: b.thumbnailUrl.isNotEmpty
-                                        ? Image.network(b.thumbnailUrl,
-                                        fit: BoxFit.cover)
-                                        : const Icon(Icons.book,
-                                        size: 80, color: Colors.grey),
+                                        ? Image.network(b.thumbnailUrl, fit: BoxFit.cover)
+                                        : const Icon(Icons.book, size: 80, color: Colors.grey),
                                   ),
                                 ),
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                   child: Text(
                                     b.title,
                                     style: AppTextStyle.BODY,
@@ -491,12 +514,8 @@ class _HomePageScreenState extends State<HomePageScreen> {
                                 Padding(
                                   padding: const EdgeInsets.only(bottom: 8),
                                   child: Text(
-                                    b.authors.isNotEmpty
-                                        ? b.authors.join(', ')
-                                        : 'Bilinmeyen Yazar',
-                                    style: AppTextStyle
-                                        .MINI_DEFAULT_DESCRIPTION_TEXT
-                                        .copyWith(color: Colors.grey),
+                                    b.authors.isNotEmpty ? b.authors.join(', ') : 'Bilinmeyen Yazar',
+                                    style: AppTextStyle.MINI_DEFAULT_DESCRIPTION_TEXT.copyWith(color: Colors.grey),
                                     textAlign: TextAlign.center,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -530,10 +549,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
                 end: Alignment.bottomRight,
               ),
             ),
-            child: Text(
-              'Bookify',
-              style: AppTextStyle.HEADING.copyWith(color: Colors.white),
-            ),
+            child: Text('Bookify', style: AppTextStyle.HEADING.copyWith(color: Colors.white)),
           ),
           ListTile(
             leading: Icon(Icons.settings, color: Colors.deepPurple.shade200),
@@ -546,14 +562,8 @@ class _HomePageScreenState extends State<HomePageScreen> {
           const Divider(),
           ListTile(
             leading: Icon(Icons.logout, color: AppColors.logoPink),
-            title: Text(
-              'Çıkış Yap',
-              style: AppTextStyle.BODY.copyWith(color: AppColors.logoPink),
-            ),
-            onTap: () => Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const LoginScreen()),
-            ),
+            title: Text('Çıkış Yap', style: AppTextStyle.BODY.copyWith(color: AppColors.logoPink)),
+            onTap: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen())),
           ),
           ListTile(
             leading: Icon(Icons.recommend, color: Colors.deepPurple.shade200),
