@@ -380,7 +380,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('jwt_token', token.trim());
-        await prefs.setString('user_id', userId.toString());
+        await prefs.setString('user_id', user['id'].toString());
         await prefs.setString('user_email', email);
         await prefs.setString('user_name', user['name']);
 

@@ -271,6 +271,9 @@ https://books.google.com/books?id=${b.id}
 
   @override
   Widget build(BuildContext context) {
+    print(
+      'DetailScreen ➔ ${widget.book.title}, desc: ${widget.book.description}, publisher: ${widget.book.publisher}, pageCount: ${widget.book.pageCount}',
+    );
     final b = widget.book;
     final size = MediaQuery.of(context).size;
     final coverW = size.width * 0.38;

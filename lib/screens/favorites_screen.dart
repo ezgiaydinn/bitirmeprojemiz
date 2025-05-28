@@ -6,6 +6,8 @@ import 'package:bitirmeprojesi/models/book.dart';
 import 'package:bitirmeprojesi/screens/book_detail_screen.dart';
 import 'package:bitirmeprojesi/constant/app_colors.dart';
 import 'package:bitirmeprojesi/constant/app_text_style.dart';
+import 'package:jwt_decode/jwt_decode.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 
 const String baseUrl = 'https://projembackend-production-4549.up.railway.app';
@@ -36,16 +38,29 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   @override
   void initState() {
     super.initState();
+    print('🔄 FavoritesScreen.initState çalıştı');
     _loadFavorites();
+    _fetchFavoritesFromApi();
+  }
+
+  Future<String?> _getUserIdFromToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+    if (token == null) return null;
+    final payload = Jwt.parseJwt(token);
+    // payload içinde nasıl isimlendirdiyse, örneğin:
+    return payload['sub']?.toString() ?? payload['userId']?.toString();
   }
 
   Future<void> _loadFavorites() async {
+    print('🔄 Load başladı');
     final res = await http.get(
       Uri.parse('$baseUrl/api/favorites/${widget.userId}'),
       headers: {'Cache-Control': 'no-cache'},
     );
     if (res.statusCode == 200) {
       final List data = jsonDecode(res.body);
+      print('📝 Favorites JSON: ${res.body}');
       setState(() {
         _favorites = data.map((j) => Book.fromJson(j)).toList();
       });
@@ -53,6 +68,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   }
 
   Future<List<Book>> _fetchFavoritesFromApi() async {
+    print('🔄 _fetchFavoritesFromApi başladı');
     final url = Uri.parse('$baseUrl/api/favorites/${widget.userId}');
     final res = await http.get(
       url,
@@ -61,6 +77,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         'Cache-control': 'no-cache',
       },
     );
+    debugPrint('📝 Favorites RAW JSON: ${res.body}');
+
     debugPrint('🚀 [GET /favorites] status: ${res.statusCode}');
     debugPrint('🚀 [GET /favorites] body:   ${res.body}');
     if (res.statusCode != 200) {
@@ -68,6 +86,15 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     }
 
     final List<dynamic> list = jsonDecode(res.body);
+    for (var item in list) {
+      debugPrint('🔑 Keys for item: ${item.keys.toList()}');
+      debugPrint('📷 thumbnailUrl value: ${item['thumbnailUrl']}');
+    }
+    final books =
+        list.map((e) => Book.fromJson(e as Map<String, dynamic>)).toList();
+    for (var b in books) {
+      print('📚 Oluşan Book.id = "${b.id}"');
+    }
     return list.map<Book>((item) {
       // 1) Eğer backend gerçek bir JSON listesi döndürdüyse:
       List<String> authorsList = [];
@@ -94,7 +121,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       }
 
       List<String> genres = [];
-      final rawGenres = item['genreJson'];
+      final rawGenres = item['genre'];
       if (rawGenres != null) {
         if (rawGenres is String) {
           if (rawGenres.startsWith('[') && rawGenres.endsWith(']')) {
@@ -115,12 +142,12 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       if (genres.isEmpty) genres = ['—'];
 
       return Book(
-        id: item['id'] as String,
+        id: item['book_id']?.toString() ?? '',
         title: item['title'] as String,
         authors: authorsList,
-        thumbnailUrl: (item['thumbnailUrl'] as String?) ?? '',
-        description: 'Açıklama bulunamadı.',
-        categories: item['genre'] as List<String>,
+        thumbnailUrl: item['thumbnailUrl'] as String? ?? '',
+        description: item['description'] as String? ?? 'Açıklama yok.',
+        categories: List<String>.from(item['genres'] ?? []),
         publisher: null,
         publishedDate: null,
         pageCount: null,
@@ -131,7 +158,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     }).toList();
   }
 
-  Future<bool> _moveFavoriteToLibrary(String bookId) async {
+  /*Future<bool> _moveFavoriteToLibrary(String bookId) async {
+    final uid = await _getUserIdFromToken();
+    if (uid == null) return false;
+    final body = jsonEncode({'userId': uid, 'bookId': bookId});
     final url = Uri.parse('$baseUrl/api/favorite-to-library');
     try {
       final res = await http
@@ -148,16 +178,84 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       debugPrint('❌ [Fav→Lib] exception: $e');
       return false;
     }
+  }*/
+  Future<http.Response> _moveFavoriteToLibrary(String bookId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final uid = prefs.getString('user_id');
+    final token = prefs.getString('jwt_token');
+    // ① userId’nin null olup olmadığını hemen kontrol et
+    if (uid == null) {
+      throw Exception(
+        'user_id hâlâ boş! Login sonrası prefs.setString çalışmıyor.',
+      );
+    }
+
+    // ② Gövdeyi hazırlayıp logla
+    final Map<String, String> payload = {'userId': uid, 'bookId': bookId};
+    final body = jsonEncode(payload);
+    debugPrint('🚀 [POST /library/add] gönderilen body: $body');
+
+    final url = Uri.parse('$baseUrl/api/favorite-to-library');
+    final res = await http
+        .post(
+          url,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+          body: jsonEncode({'userId': uid, 'bookId': bookId}),
+        )
+        .timeout(const Duration(seconds: 5));
+
+    // Konsola hatayı loglayalım
+    debugPrint('🚀 [POST /library/add] status: ${res.statusCode}');
+    debugPrint('🚀 [POST /library/add] body:   ${res.body}');
+
+    return res;
   }
 
   void _onAddToLibrary(Book book) async {
+    debugPrint('🔍 Gönderilecek book.id = "${book.id}"');
+    setState(() => _loading = true);
+    try {
+      final res = await _moveFavoriteToLibrary(book.id);
+
+      if (res.statusCode == 200) {
+        await _loadFavorites();
+        widget.onAddToLibrary(book);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('"${book.title}" kütüphaneye taşındı!')),
+        );
+      } else {
+        // Hata kodunu ve mesajı direkt gösterelim
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Taşıma başarısız oldu (code ${res.statusCode}): ${res.body}',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      // Exception fırlatıldıysa da kullanıcıya bildir
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Taşıma sırasında hata: $e')));
+    } finally {
+      setState(() => _loading = false);
+    }
+  }
+
+  /*void _onAddToLibrary(Book book) async {
     setState(() => _loading = true);
     final ok = await _moveFavoriteToLibrary(book.id);
     if (ok) {
       await _loadFavorites();
       widget.onAddToLibrary(book);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('\"${book.title}\" kütüphaneye taşındı!')),
+        SnackBar(content: Text('"${book.title}" kütüphaneye taşındı!')),
       );
     } else {
       ScaffoldMessenger.of(
@@ -165,7 +263,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       ).showSnackBar(const SnackBar(content: Text('Taşıma başarısız oldu 😕')));
     }
     setState(() => _loading = false);
-  }
+  }*/
 
   @override
   Widget build(BuildContext context) {
@@ -226,6 +324,12 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (ctx, i) {
         final b = _favorites[i];
+        if (b.thumbnailUrl.isEmpty) {
+          // boş geldiyse
+          debugPrint('⚠️ thumbnailUrl boş gelmiş!');
+        } else {
+          debugPrint('✅ thumbnailUrl var: ${b.thumbnailUrl}');
+        }
         final rating = widget.userRatings[b.id] ?? 0;
         return Card(
           color: const Color(0xFFF4ECFF), // pastel-lila zemin

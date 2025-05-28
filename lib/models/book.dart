@@ -85,10 +85,10 @@ class Book {
         ratingsCount: info['ratingsCount'] as int?,
       );*/
       return Book(
-        id: json['book_id']?.toString() ?? '',
+        id: json['id']?.toString() ?? '',
         title: fixEncoding(json['title'] ?? 'Başlık yok'),
         authors: Book._parseAuthors(json['authors']),
-        thumbnailUrl: json['thumbnail_url'] ?? '',
+        thumbnailUrl: json['thumbnailUrl'] ?? '',
         description: fixEncoding(json['description'] ?? ''),
         categories: [], // ya da json'dan geliyorsa oradan çek
         publisher: fixEncoding(json['publisher'] ?? ''),
@@ -120,10 +120,10 @@ class Book {
                 : null,
         ratingsCount: json['ratingsCount'] as int?,
         categories: <String>[],*/
-        id: json['book_id']?.toString() ?? '',
+        id: json['id']?.toString() ?? '',
         title: fixEncoding(json['title'] ?? 'Başlık yok'),
         authors: Book._parseAuthors(json['authors']),
-        thumbnailUrl: json['thumbnail_url'] ?? '',
+        thumbnailUrl: json['thumbnailUrl'] ?? '',
         description: fixEncoding(json['description'] ?? ''),
         categories: [], // ya da json'dan geliyorsa oradan çek
         publisher: fixEncoding(json['publisher'] ?? ''),
