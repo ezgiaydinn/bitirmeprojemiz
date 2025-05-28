@@ -14,11 +14,8 @@ import 'package:bitirmeprojesi/constant/app_colors.dart';
 import 'package:bitirmeprojesi/constant/app_text_style.dart';
 import 'package:bitirmeprojesi/screens/recommendations_screen.dart';
 import 'package:bitirmeprojesi/services/api_service.dart';
-
-import 'package:bitirmeprojesi/screens/recommendations_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// 🔄 Artık buradaki baseUrl yerine ortak sabiti kullanıyoruz:
 const String kBaseUrl = 'https://projembackend-production-4549.up.railway.app';
 
 class HomePageScreen extends StatefulWidget {
@@ -38,33 +35,27 @@ class HomePageScreen extends StatefulWidget {
 }
 
 class _HomePageScreenState extends State<HomePageScreen> {
+  // 1. Arama için controller
+  final TextEditingController _searchController = TextEditingController();
+
   Future<List<Book>> fetchRecommendations() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
-
-    if (token == null || token.isEmpty) {
-      print("❌ Token yok");
-      return [];
-    }
-
+    if (token == null || token.isEmpty) return [];
     final response = await http.get(
-      Uri.parse(
-        'https://terrific-reprieve-production.up.railway.app/recommend',
-      ),
+      Uri.parse('https://terrific-reprieve-production.up.railway.app/recommend'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
       },
     );
-
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      final List<dynamic> raw = data['recommendations'];
-      return raw.map((e) => Book.fromJson(e)).toList();
-    } else {
-      print("⚠️ API Hatası: ${response.statusCode}");
-      return [];
+      return (data['recommendations'] as List)
+          .map((e) => Book.fromJson(e))
+          .toList();
     }
+    return [];
   }
 
   Future<List<Book>>? _futureBooks;
@@ -72,110 +63,25 @@ class _HomePageScreenState extends State<HomePageScreen> {
 
   final List<Book> _favoriteBooks = [];
   final List<Book> _libraryBooks = [];
-  final Map<String, int> _userRatings = {};
+  // 👇 İçeride double saklıyoruz:
+  final Map<String, double> _userRatings = {};
   int _selectedIndex = 1;
-  static List<String> _parseAuthors(dynamic rawAuthors) {
-    if (rawAuthors == null) return [];
-
-    if (rawAuthors is String) {
-      try {
-        final decoded = jsonDecode(rawAuthors);
-        if (decoded is List) {
-          return List<String>.from(decoded);
-        } else {
-          return [rawAuthors];
-        }
-      } catch (_) {
-        return [rawAuthors]; // düz string gibi geldiğinde
-      }
-    } else if (rawAuthors is List) {
-      return List<String>.from(rawAuthors);
-    }
-
-    return [];
-  }
+  String _displayName = '';
 
   @override
-  void navigateToRecommendations() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('jwt_token')?.trim();
-
-      if (token == null || token.isEmpty) {
-        print("❌ Token eksik! Kullanıcı giriş yapmamış olabilir.");
-        return;
-      }
-
-      final rawRecs = await RecommendationService.fetchRecommendations(
-        token,
-        widget.userId,
-      );
-
-      List<Book> recommendedBooks =
-          rawRecs.map((rec) {
-            return Book(
-              id: rec['book_id'].toString(),
-              title: rec['title'] ?? 'Başlık yok',
-              //authors: List<String>.from(rec['authors'] ?? []),
-              authors: _parseAuthors(rec['authors']),
-              thumbnailUrl: rec['thumbnail_url'] ?? '',
-              publisher: rec['publisher'] ?? '',
-              publishedDate: rec['published_date'] ?? '',
-              description: rec['description'] ?? '',
-              categories: [],
-            );
-          }).toList();
-
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder:
-              (_) => RecommendationsScreen(
-                fetchRecommendations: fetchRecommendations,
-                onToggleFavorite: (book) {
-                  setState(() {
-                    if (_favoriteBooks.any((b) => b.id == book.id)) {
-                      _favoriteBooks.removeWhere((b) => b.id == book.id);
-                    } else {
-                      _favoriteBooks.add(book);
-                    }
-                  });
-                },
-                onAddToLibrary: (book) {
-                  setState(() {
-                    if (!_libraryBooks.any((b) => b.id == book.id)) {
-                      _libraryBooks.add(book);
-                    }
-                  });
-                },
-                onRate: (book, rating) {
-                  setState(() {
-                    _userRatings[book.id] = rating as int;
-                  });
-                },
-
-                userRatings: {},
-              ),
-        ),
-      );
-    } catch (e) {
-      print("Öneriler alınamadı1: $e");
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Öneriler alınamadı")));
-    }
-  }
-
-  String _displayName = '';
   void initState() {
     super.initState();
     SharedPreferences.getInstance().then((prefs) {
-      setState(() {
-        _displayName = prefs.getString('user_name') ?? 'Misafir';
-      });
+      setState(() => _displayName = prefs.getString('user_name') ?? 'Misafir');
     });
     _loadUserData();
     _futureBooks = null;
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadUserData() async {
@@ -190,15 +96,11 @@ class _HomePageScreenState extends State<HomePageScreen> {
         setState(() {
           _favoriteBooks
             ..clear()
-            ..addAll(
-              data
-                  .map((e) => Book.fromJson(e as Map<String, dynamic>))
-                  .toList(),
-            );
+            ..addAll(data.map((e) => Book.fromJson(e)).toList());
         });
       }
 
-      // --- Rating’ler ---
+      // --- Puanlamalar ---
       final rateRes = await http.get(
         Uri.parse('$kBaseUrl/api/ratings/${widget.userId}'),
       );
@@ -211,7 +113,8 @@ class _HomePageScreenState extends State<HomePageScreen> {
           for (var e in data) {
             final book = Book.fromJson(e as Map<String, dynamic>);
             _libraryBooks.add(book);
-            _userRatings[book.id] = (e['rating'] as num).toInt();
+            // 👇 JSON'daki rating'i double olarak sakla
+            _userRatings[book.id] = (e['rating'] as num).toDouble();
           }
         });
       }
@@ -220,51 +123,73 @@ class _HomePageScreenState extends State<HomePageScreen> {
     }
   }
 
+  // 2. Aramayı tetikle
+  void _runSearch(String query) {
+    if (query.trim().isEmpty) return;
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _futureBooks = _repo.fetchBooks(query);
+    });
+  }
+
+  static List<String> _parseAuthors(dynamic raw) {
+    if (raw == null) return [];
+    if (raw is String) {
+      try {
+        final d = jsonDecode(raw);
+        if (d is List) return List<String>.from(d);
+      } catch (_) {}
+      return [raw];
+    } else if (raw is List) {
+      return List<String>.from(raw);
+    }
+    return [];
+  }
+
   void _onTabTapped(int index) {
     if (index == 0) {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder:
-              (_) => FavoritesScreen(
-                userId: widget.userId,
-                onAddToLibrary: (b) {
-                  if (!mounted) return;
-                  setState(() {
-                    _favoriteBooks.removeWhere((x) => x.id == b.id);
-                    _libraryBooks.add(b);
-                  });
-                },
-                userRatings: _userRatings,
-                onRate: (b, r) {
-                  if (!mounted) return;
-                  setState(() => _userRatings[b.id] = r);
-                },
-              ),
+          builder: (_) => FavoritesScreen(
+            userId: widget.userId,
+            // 👇 Map<String,double> → Map<String,int>
+            userRatings: _userRatings.map((k, v) => MapEntry(k, v.toInt())),
+            onAddToLibrary: (b) {
+              if (!mounted) return;
+              setState(() {
+                _favoriteBooks.removeWhere((x) => x.id == b.id);
+                _libraryBooks.add(b);
+              });
+            },
+            onRate: (b, r) {
+              if (!mounted) return;
+              // r zaten int geliyor
+              setState(() => _userRatings[b.id] = r.toDouble());
+            },
+          ),
         ),
       ).then((_) => setState(() => _selectedIndex = 1));
     } else if (index == 2) {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder:
-              (_) => LibraryScreen(
-                userId: widget.userId,
-                userRatings: _userRatings,
-                onRate: (book, rating) {
-                  if (!mounted) return;
-                  setState(() {
-                    _userRatings[book.id] = rating;
-                  });
-                },
-                onRemoveFromLibrary: (book) {
-                  if (!mounted) return;
-                  setState(() {
-                    _libraryBooks.removeWhere((b) => b.id == book.id);
-                    _userRatings.remove(book.id);
-                  });
-                },
-              ),
+          builder: (_) => LibraryScreen(
+            userId: widget.userId,
+            // 👇 Map<String,double> → Map<String,int>
+            userRatings: _userRatings.map((k, v) => MapEntry(k, v.toInt())),
+            onRemoveFromLibrary: (b) {
+              if (!mounted) return;
+              setState(() {
+                _libraryBooks.removeWhere((x) => x.id == b.id);
+                _userRatings.remove(b.id);
+              });
+            },
+            onRate: (b, r) {
+              if (!mounted) return;
+              setState(() => _userRatings[b.id] = r.toDouble());
+            },
+          ),
         ),
       ).then((_) => setState(() => _selectedIndex = 1));
     } else {
@@ -272,11 +197,65 @@ class _HomePageScreenState extends State<HomePageScreen> {
     }
   }
 
+  void navigateToRecommendations() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('jwt_token')?.trim();
+      if (token == null || token.isEmpty) return;
+
+      final rawRecs = await RecommendationService.fetchRecommendations(
+        token,
+        widget.userId,
+      );
+      final recBooks = rawRecs.map((rec) {
+        return Book(
+          id: rec['book_id'].toString(),
+          title: rec['title'] ?? 'Başlık yok',
+          authors: _parseAuthors(rec['authors']),
+          thumbnailUrl: rec['thumbnail_url'] ?? '',
+          publisher: rec['publisher'] ?? '',
+          publishedDate: rec['published_date'] ?? '',
+          description: rec['description'] ?? '',
+          categories: [],
+        );
+      }).toList();
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => RecommendationsScreen(
+            fetchRecommendations: fetchRecommendations,
+            userRatings: <String, double>{}, // kendi tipine uygun
+            onToggleFavorite: (b) {
+              setState(() {
+                if (_favoriteBooks.any((x) => x.id == b.id))
+                  _favoriteBooks.removeWhere((x) => x.id == b.id);
+                else
+                  _favoriteBooks.add(b);
+              });
+            },
+            onAddToLibrary: (b) {
+              setState(() {
+                if (!_libraryBooks.any((x) => x.id == b.id))
+                  _libraryBooks.add(b);
+              });
+            },
+            onRate: (b, r) => setState(() => _userRatings[b.id] = r.toDouble()),
+          ),
+        ),
+      );
+    } catch (e) {
+      debugPrint("Öneriler alınamadı: $e");
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("Öneriler alınamadı")));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final w = MediaQuery.of(context).size.width;
     final h = MediaQuery.of(context).size.height;
-    final headerHeight = h * 0.25;
+    final headerH = h * 0.25;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9F5FF),
@@ -308,57 +287,53 @@ class _HomePageScreenState extends State<HomePageScreen> {
           ),
         ),
         child: NestedScrollView(
-          headerSliverBuilder:
-              (_, __) => [
-                SliverAppBar(
-                  backgroundColor:
-                      Colors.deepPurple.shade200, // ← Burayı güncelledik
-                  expandedHeight: headerHeight,
-                  pinned: true,
-                  flexibleSpace: FlexibleSpaceBar(
-                    collapseMode: CollapseMode.pin,
-                    title: Text(
-                      'Merhaba, ${widget.name}!',
-                      style: AppTextStyle.BODY.copyWith(color: Colors.white),
+          headerSliverBuilder: (_, __) => [
+            SliverAppBar(
+              backgroundColor: Colors.deepPurple.shade200,
+              expandedHeight: headerH,
+              pinned: true,
+              flexibleSpace: FlexibleSpaceBar(
+                collapseMode: CollapseMode.pin,
+                title: Text(
+                  'Merhaba, ${widget.name}!',
+                  style: AppTextStyle.BODY.copyWith(color: Colors.white),
+                ),
+                background: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.deepPurple.shade100.withOpacity(0.8),
+                        Colors.deepPurple.shade200,
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                    background: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.deepPurple.shade100.withOpacity(0.8),
-                            Colors.deepPurple.shade200,
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
+                  ),
+                ),
+              ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.recommend, color: Colors.white),
+                  onPressed: navigateToRecommendations,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.person, color: Colors.white),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ProfileScreen(
+                        name: widget.name,
+                        userId: widget.userId,
                       ),
                     ),
                   ),
-                  actions: [
-                    IconButton(
-                      icon: Icon(Icons.recommend, color: Colors.white),
-                      onPressed: navigateToRecommendations,
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.person, color: Colors.white),
-                      onPressed:
-                          () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder:
-                                  (_) => ProfileScreen(
-                                    name: widget.name,
-                                    userId: widget.userId,
-                                  ),
-                            ),
-                          ),
-                    ),
-                  ],
                 ),
               ],
+            ),
+          ],
           body: Column(
             children: [
-              // —— GÜNCELLENMİŞ ARAMA KARTI ——
+              // —— Arama Kartı ——
               Padding(
                 padding: EdgeInsets.symmetric(
                   horizontal: w * 0.05,
@@ -368,6 +343,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
                   elevation: 4,
                   borderRadius: BorderRadius.circular(30),
                   child: TextField(
+                    controller: _searchController,
                     textInputAction: TextInputAction.search,
                     decoration: InputDecoration(
                       hintText: 'Kitap ara...',
@@ -375,6 +351,10 @@ class _HomePageScreenState extends State<HomePageScreen> {
                       prefixIcon: Icon(
                         Icons.search,
                         color: AppColors.greyMedium,
+                      ),
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.send),
+                        onPressed: () => _runSearch(_searchController.text),
                       ),
                       filled: true,
                       fillColor: Colors.white,
@@ -387,155 +367,152 @@ class _HomePageScreenState extends State<HomePageScreen> {
                         borderSide: BorderSide.none,
                       ),
                     ),
-                    onSubmitted: (q) {
-                      setState(() => _futureBooks = _repo.fetchBooks(q));
-                      FocusScope.of(context).unfocus();
-                    },
+                    onSubmitted: (q) => _runSearch(q),
                   ),
                 ),
               ),
 
-              // —— İçerik (orijinal yapı korunuyor) ——
+              // —— Kitap Listesi ——
               Expanded(
-                child:
-                    _futureBooks == null
-                        ? Center(
-                          child: Text(
-                            'Bir kitap arayın...',
-                            style: AppTextStyle.BODY.copyWith(
-                              color: Colors.grey[700],
+                child: _futureBooks == null
+                    ? Center(
+                  child: Text(
+                    'Bir kitap arayın...',
+                    style:
+                    AppTextStyle.BODY.copyWith(color: Colors.grey[700]),
+                  ),
+                )
+                    : FutureBuilder<List<Book>>(
+                  future: _futureBooks,
+                  builder: (ctx, snap) {
+                    if (snap.connectionState != ConnectionState.done) {
+                      return const Center(
+                          child: CircularProgressIndicator());
+                    }
+                    if (snap.hasError) {
+                      return Center(
+                          child: Text('Hata: ${snap.error}',
+                              style: AppTextStyle.BODY));
+                    }
+                    final books = snap.data ?? [];
+                    return GridView.builder(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: w * 0.05,
+                        vertical: h * 0.02,
+                      ),
+                      gridDelegate:
+                      SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: w * 0.05,
+                        mainAxisSpacing: h * 0.02,
+                        childAspectRatio: 0.6,
+                      ),
+                      itemCount: books.length,
+                      itemBuilder: (_, i) {
+                        final b = books[i];
+                        final rDouble = _userRatings[b.id] ?? 0.0;
+                        final rInt = rDouble.toInt();
+                        return GestureDetector(
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => BookDetailScreen(
+                                userId: widget.userId,
+                                book: b,
+                                isFavorite: _favoriteBooks
+                                    .any((x) => x.id == b.id),
+                                isInLibrary: _libraryBooks
+                                    .any((x) => x.id == b.id),
+                                userRating: rInt, // int olarak
+                                onToggleFavorite: (bx) {
+                                  if (!mounted) return;
+                                  setState(() {
+                                    if (_favoriteBooks
+                                        .any((x) => x.id == bx.id))
+                                      _favoriteBooks.removeWhere(
+                                              (x) => x.id == bx.id);
+                                    else
+                                      _favoriteBooks.add(bx);
+                                  });
+                                },
+                                onToggleLibrary: (bx) {
+                                  if (!mounted) return;
+                                  setState(() {
+                                    if (_libraryBooks
+                                        .any((x) => x.id == bx.id)) {
+                                      _libraryBooks.removeWhere(
+                                              (x) => x.id == bx.id);
+                                      _userRatings.remove(bx.id);
+                                    } else {
+                                      _libraryBooks.add(bx);
+                                    }
+                                  });
+                                },
+                                onRate: (bx, rating) {
+                                  if (!mounted) return;
+                                  setState(() =>
+                                  _userRatings[bx.id] =
+                                      rating.toDouble());
+                                },
+                              ),
                             ),
                           ),
-                        )
-                        : FutureBuilder<List<Book>>(
-                          future: _futureBooks,
-                          builder: (ctx, snap) {
-                            if (snap.connectionState != ConnectionState.done) {
-                              return const Center(
-                                child: CircularProgressIndicator(),
-                              );
-                            }
-                            if (snap.hasError) {
-                              return Center(
-                                child: Text(
-                                  'Hata: ${snap.error}',
-                                  style: AppTextStyle.BODY,
-                                ),
-                              );
-                            }
-                            final books = snap.data ?? [];
-                            return GridView.builder(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: w * 0.05,
-                                vertical: h * 0.02,
-                              ),
-                              gridDelegate:
-                                  SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 2,
-                                    crossAxisSpacing: w * 0.05,
-                                    mainAxisSpacing: h * 0.02,
-                                    childAspectRatio: 0.6,
+                          child: Card(
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16)),
+                            elevation: 6,
+                            margin: const EdgeInsets.all(8),
+                            child: Column(
+                              crossAxisAlignment:
+                              CrossAxisAlignment.stretch,
+                              children: [
+                                Expanded(
+                                  child: ClipRRect(
+                                    borderRadius: const BorderRadius.vertical(
+                                        top: Radius.circular(16)),
+                                    child: b.thumbnailUrl.isNotEmpty
+                                        ? Image.network(b.thumbnailUrl,
+                                        fit: BoxFit.cover)
+                                        : const Icon(Icons.book,
+                                        size: 80, color: Colors.grey),
                                   ),
-                              itemCount: books.length,
-                              itemBuilder: (_, i) => _buildBookCard(books[i]),
-                            );
-                          },
-                        ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  child: Text(
+                                    b.title,
+                                    style: AppTextStyle.BODY,
+                                    textAlign: TextAlign.center,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: Text(
+                                    b.authors.isNotEmpty
+                                        ? b.authors.join(', ')
+                                        : 'Bilinmeyen Yazar',
+                                    style: AppTextStyle
+                                        .MINI_DEFAULT_DESCRIPTION_TEXT
+                                        .copyWith(color: Colors.grey),
+                                    textAlign: TextAlign.center,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBookCard(Book book) {
-    final isFav = _favoriteBooks.any((b) => b.id == book.id);
-    final inLib = _libraryBooks.any((b) => b.id == book.id);
-    final rating = _userRatings[book.id] ?? 0;
-
-    return GestureDetector(
-      onTap:
-          () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (_) => BookDetailScreen(
-                    userId: widget.userId,
-                    book: book,
-                    isFavorite: isFav,
-                    isInLibrary: inLib,
-                    userRating: rating,
-                    onToggleFavorite: (b) {
-                      if (!mounted) return;
-                      setState(() {
-                        if (isFav)
-                          _favoriteBooks.removeWhere((x) => x.id == b.id);
-                        else
-                          _favoriteBooks.add(b);
-                      });
-                    },
-                    onToggleLibrary: (b) {
-                      if (!mounted) return;
-                      setState(() {
-                        if (inLib) {
-                          _libraryBooks.removeWhere((x) => x.id == b.id);
-                          _userRatings.remove(b.id);
-                        } else {
-                          _libraryBooks.add(b);
-                        }
-                      });
-                    },
-                    onRate: (b, r) {
-                      if (!mounted) return;
-                      setState(() => _userRatings[b.id] = r);
-                    },
-                  ),
-            ),
-          ),
-      child: Card(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        elevation: 6,
-        margin: const EdgeInsets.all(8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(16),
-                ),
-                child:
-                    book.thumbnailUrl.isNotEmpty
-                        ? Image.network(book.thumbnailUrl, fit: BoxFit.cover)
-                        : const Icon(Icons.book, size: 80, color: Colors.grey),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: Text(
-                book.title,
-                style: AppTextStyle.BODY,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Text(
-                book.authors.isNotEmpty
-                    ? book.authors.join(', ')
-                    : 'Bilinmeyen Yazar',
-                style: AppTextStyle.MINI_DEFAULT_DESCRIPTION_TEXT.copyWith(
-                  color: Colors.grey,
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
         ),
       ),
     );
@@ -573,11 +550,10 @@ class _HomePageScreenState extends State<HomePageScreen> {
               'Çıkış Yap',
               style: AppTextStyle.BODY.copyWith(color: AppColors.logoPink),
             ),
-            onTap:
-                () => Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                ),
+            onTap: () => Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const LoginScreen()),
+            ),
           ),
           ListTile(
             leading: Icon(Icons.recommend, color: Colors.deepPurple.shade200),
@@ -587,14 +563,13 @@ class _HomePageScreenState extends State<HomePageScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder:
-                      (_) => RecommendationsScreen(
-                        fetchRecommendations: fetchRecommendations,
-                        onToggleFavorite: (Book) {},
-                        onAddToLibrary: (Book) {},
-                        userRatings: {},
-                        onRate: (Book, int) {},
-                      ),
+                  builder: (_) => RecommendationsScreen(
+                    fetchRecommendations: fetchRecommendations,
+                    userRatings: <String, double>{},
+                    onToggleFavorite: (Book) {},
+                    onAddToLibrary: (Book) {},
+                    onRate: (Book, int) {},
+                  ),
                 ),
               );
             },
