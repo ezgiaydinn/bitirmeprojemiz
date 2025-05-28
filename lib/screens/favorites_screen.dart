@@ -39,18 +39,6 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     _loadFavorites();
   }
 
-  //Future<void> _loadFavorites() async {
-  //setState(() => _loading = true);
-  //try {
-  //final fetched = await _fetchFavoritesFromApi();
-  //setState(() => _favorites = fetched);
-  //} catch (e) {
-  //debugPrint('Favori yükleme hatası: $e');
-  //} finally {
-  //setState(() => _loading = false);
-  //}
-  //}
-
   Future<void> _loadFavorites() async {
     final res = await http.get(
       Uri.parse('$baseUrl/api/favorites/${widget.userId}'),
@@ -190,7 +178,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         Scaffold(
           backgroundColor: AppColors.backgroundLight,
           appBar: AppBar(
-            backgroundColor: AppColors.accent,
+            backgroundColor: Colors.deepPurple.shade200,
             elevation: 0,
             title: Text(
               'Favoriler',
@@ -240,11 +228,19 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         final b = _favorites[i];
         final rating = widget.userRatings[b.id] ?? 0;
         return Card(
+          color: const Color(0xFFF4ECFF), // pastel-lila zemin
+          elevation: 5, // hafif gölge
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            // yuvarlak köşe
+            borderRadius: BorderRadius.circular(16),
           ),
-          elevation: 4,
+
           child: ListTile(
+            tileColor: const Color(0xFFF4ECFF), // kartla aynı zemin
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 8,
+            ),
             leading:
                 b.thumbnailUrl.isNotEmpty
                     ? ClipRRect(
@@ -282,7 +278,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             ),
             trailing: ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.accent,
+                backgroundColor: Colors.deepPurple.shade200,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -327,10 +323,11 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         final b = _favorites[i];
         final rating = widget.userRatings[b.id] ?? 0;
         return Card(
+          color: const Color(0xFFF4ECFF),
+          elevation: 5,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
           ),
-          elevation: 4,
           child: InkWell(
             borderRadius: BorderRadius.circular(12),
             onTap:
@@ -415,14 +412,17 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   padding: const EdgeInsets.all(8.0),
                   child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.accent,
+                      backgroundColor: Colors.deepPurple.shade200,
                       minimumSize: const Size.fromHeight(36),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                     icon: const Icon(Icons.library_add, size: 18),
-                    label: const Text('Kütüphaneye Taşı'),
+                    label: const Text(
+                      'Kütüphaneye Taşı',
+                      style: TextStyle(color: Colors.white),
+                    ),
                     onPressed: () => _onAddToLibrary(b),
                   ),
                 ),

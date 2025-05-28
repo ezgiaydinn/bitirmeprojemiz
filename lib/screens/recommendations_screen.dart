@@ -1,15 +1,17 @@
-// lib/screens/recommendations_screen.dart
-
+/*import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bitirmeprojesi/models/book.dart';
-import 'package:bitirmeprojesi/screens/book_detail_screen.dart' show BookDetailScreen;
+import 'package:bitirmeprojesi/screens/book_detail_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class RecommendationsScreen extends StatefulWidget {
-  /// Kullanıcı ID’si parametresi
-  final String userId;
+const String kBaseUrl = String.fromEnvironment(
+  'API_URL',
+  defaultValue: 'https://projembackend-production-4549.up.railway.app',
+);
 
-  final List<Book> recommendations;
+class RecommendationsScreen extends StatefulWidget {
   final List<Book> favoriteBooks;
   final void Function(Book) onToggleFavorite;
   final void Function(Book) onAddToLibrary;
@@ -18,8 +20,6 @@ class RecommendationsScreen extends StatefulWidget {
 
   const RecommendationsScreen({
     Key? key,
-    required this.userId,
-    required this.recommendations,
     required this.favoriteBooks,
     required this.onToggleFavorite,
     required this.onAddToLibrary,
@@ -32,110 +32,353 @@ class RecommendationsScreen extends StatefulWidget {
 }
 
 class _RecommendationsScreenState extends State<RecommendationsScreen> {
-  late List<Book> _recs;
+  List<Book> _recommendations = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _recs = List.from(widget.recommendations);
+    fetchRecommendations();
+  }
+
+  Future<void> fetchRecommendations() async {
+    print("🟡 Fonksiyon başladı");
+    try {
+      print("📦 SharedPreferences alınıyor...");
+      final prefs = await SharedPreferences.getInstance();
+      print("📦 prefs OK");
+
+      final token = prefs.getString('jwt_token');
+      print("🔑 Token alındı: $token");
+
+      if (token == null || token.isEmpty) {
+        print("❌ Token null veya boş! Fonksiyon sonlandırıldı.");
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final url = Uri.parse(
+        'https://terrific-reprieve-production.up.railway.app/recommend',
+      );
+      print("📡 URL hazırlandı: $url");
+
+      print("📡 İstek atılıyor...");
+      final response = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      print("✅ Yanıt kodu: ${response.statusCode}");
+      print("📩 Yanıt içeriği: ${response.body}");
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List<dynamic> rawList = data['recommendations'];
+
+        setState(() {
+          _recommendedBooks =
+              rawList.map((rec) {
+                return Book(
+                  id: rec['book_id'].toString(),
+                  title: rec['title'] ?? 'Başlık yok',
+                  authors: Book._parseAuthors(rec['authors']),
+                  thumbnailUrl: rec['thumbnail_url'] ?? '',
+                  publisher: rec['publisher'] ?? '',
+                  publishedDate: rec['publishedDate'] ?? '',
+                  description: rec['description'] ?? '',
+                  categories: [],
+                );
+              }).toList();
+
+          _isLoading = false;
+        });
+      } else {
+        print("❌ API başarısız yanıt: ${response.statusCode}");
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print("❌ TRY-CATCH HATASI: $e");
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Tüm Öneriler', style: GoogleFonts.openSans(fontWeight: FontWeight.bold)),
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        iconTheme: IconThemeData(color: Colors.purple.shade800),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFFB39DDB), Color(0xFFE1BEE7)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
+        title: Text("Senin İçin Önerilenler", style: GoogleFonts.poppins()),
       ),
-      backgroundColor: const Color(0xFFF3E5F5),
-      body: _recs.isEmpty
-          ? Center(
-        child: Text(
-          'Öneri kalmadı 😊',
-          style: GoogleFonts.openSans(fontSize: 18, color: Colors.purple.shade400),
-        ),
-      )
-          : ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: _recs.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 16),
-        itemBuilder: (_, idx) {
-          final book = _recs[idx];
-          final fav = widget.favoriteBooks.any((b) => b.id == book.id);
-          final rating = widget.userRatings[book.id];
-          return Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            elevation: 4,
-            child: ListTile(
-              leading: book.thumbnailUrl.isNotEmpty
-                  ? Image.network(book.thumbnailUrl, width: 40, fit: BoxFit.cover)
-                  : const Icon(Icons.menu_book, color: Colors.purple),
-              title: Text(book.title, style: GoogleFonts.openSans(fontWeight: FontWeight.w600)),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    book.authors.join(', '),
-                    style: GoogleFonts.openSans(fontSize: 12, color: Colors.grey[700]),
-                  ),
-                  if (rating != null && rating > 0)
-                    Row(
-                      children: List.generate(
-                        rating,
-                            (_) => const Icon(Icons.star, size: 12, color: Colors.amber),
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _recommendations.isEmpty
+              ? const Center(child: Text("Henüz öneri bulunamadı."))
+              : ListView.builder(
+                itemCount: _recommendations.length,
+                itemBuilder: (context, index) {
+                  final book = _recommendations[index];
+                  final isFavorite = widget.favoriteBooks.contains(book);
+                  final userRating = widget.userRatings[book.id];
+                  return ListTile(
+                    title: Text(book.title),
+                    subtitle: Text(book.authors.join(", ")),
+                    trailing: IconButton(
+                      icon: Icon(
+                        isFavorite ? Icons.favorite : Icons.favorite_border,
+                        color: isFavorite ? Colors.red : null,
                       ),
+                      onPressed: () => widget.onToggleFavorite(book),
                     ),
-                ],
+                    onTap: () => widget.onAddToLibrary(book),
+                  );
+                },
               ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: Icon(
-                      fav ? Icons.favorite : Icons.favorite_border,
-                      color: fav ? Colors.redAccent : Colors.grey,
+    );
+  }
+}
+*/
+import 'package:flutter/material.dart';
+import '../models/book.dart';
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+
+class RecommendationsScreen extends StatefulWidget {
+  final Future<List<Book>> Function() fetchRecommendations;
+  final void Function(Book) onToggleFavorite;
+  final void Function(Book) onAddToLibrary;
+  final Map<String, double> userRatings;
+  final void Function(Book, double) onRate;
+
+  const RecommendationsScreen({
+    super.key,
+    required this.fetchRecommendations,
+    required this.onToggleFavorite,
+    required this.onAddToLibrary,
+    required this.userRatings,
+    required this.onRate,
+  });
+
+  @override
+  State<RecommendationsScreen> createState() => _RecommendationsScreenState();
+}
+
+class _RecommendationsScreenState extends State<RecommendationsScreen> {
+  late Future<List<Book>> _recommendationsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _recommendationsFuture = widget.fetchRecommendations();
+  }
+
+  void _showBookDetails(BuildContext context, Book book) {
+    showDialog(
+      context: context,
+      builder:
+          (_) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: Text(book.title),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(book.title),
+                Text(
+                  book.authors.isNotEmpty
+                      ? book.authors.join(", ")
+                      : "Yazar bilgisi yok",
+                ),
+                if (book.source != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      book.source == "svd"
+                          ? "🧠 SVD ile önerildi"
+                          : "🌟 ${book.source!.toUpperCase()} önerisi",
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
                     ),
-                    onPressed: () {
-                      widget.onToggleFavorite(book);
-                      setState(() {});
-                    },
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.add, color: Colors.green),
-                    onPressed: () {
-                      widget.onAddToLibrary(book);
-                      setState(() => _recs.remove(book));
-                    },
-                  ),
-                ],
+                Text(book.publisher ?? "Yayınevi bilinmiyor"),
+                Text(
+                  book.description.isNotEmpty
+                      ? book.description
+                      : "Açıklama bulunamadı.",
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                child: const Text("Kapat"),
+                onPressed: () => Navigator.of(context).pop(),
               ),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => BookDetailScreen(
-                    userId: widget.userId,
-                    book: book,
-                    isFavorite: fav,
-                    isInLibrary: false,
-                    userRating: rating ?? 0,
-                    onToggleFavorite: widget.onToggleFavorite,
-                    onToggleLibrary: widget.onAddToLibrary,
-                    onRate: widget.onRate,
+            ],
+          ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF9F5FF),
+      appBar: AppBar(
+        title: const Text('Senin İçin Önerilenler'),
+        centerTitle: true,
+        backgroundColor: Colors.deepPurple.shade200,
+        elevation: 0,
+      ),
+      body: FutureBuilder<List<Book>>(
+        future: _recommendationsFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Hata oluştu: ${snapshot.error}'));
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(child: Text('Hiç öneri bulunamadı.'));
+          }
+
+          final recommendedBooks = snapshot.data!;
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(12),
+            itemCount: recommendedBooks.length,
+            itemBuilder: (context, index) {
+              final book = recommendedBooks[index];
+              final isFavorite = widget.userRatings.containsKey(book.id);
+              final rating = widget.userRatings[book.id] ?? 0.0;
+
+              return Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                elevation: 5,
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                child: InkWell(
+                  onTap: () => _showBookDetails(context, book),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child:
+                                  book.thumbnailUrl.isNotEmpty
+                                      ? Image.network(
+                                        book.thumbnailUrl,
+                                        height: 90,
+                                        width: 60,
+                                        fit: BoxFit.cover,
+                                      )
+                                      : const Icon(Icons.book, size: 60),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    book.title,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    book.authors.isNotEmpty
+                                        ? book.authors.join(', ')
+                                        : 'Yazar bilgisi yok',
+                                  ),
+                                  const SizedBox(height: 8),
+                                  RatingBar.builder(
+                                    initialRating: rating,
+                                    minRating: 1,
+                                    direction: Axis.horizontal,
+                                    allowHalfRating: true,
+                                    itemCount: 5,
+                                    itemSize: 20,
+                                    itemPadding: const EdgeInsets.symmetric(
+                                      horizontal: 2.0,
+                                    ),
+                                    itemBuilder:
+                                        (context, _) => const Icon(
+                                          Icons.star,
+                                          color: Colors.amber,
+                                        ),
+                                    onRatingUpdate:
+                                        (newRating) =>
+                                            widget.onRate(book, newRating),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              icon: Icon(
+                                isFavorite
+                                    ? Icons.favorite
+                                    : Icons.favorite_border,
+                                color: Colors.deepPurple,
+                              ),
+                              onPressed: () => widget.onToggleFavorite(book),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.calendar_today,
+                              size: 16,
+                              color: Colors.grey,
+                            ),
+                            const SizedBox(width: 4),
+                            if (book.source != null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Text(
+                                  book.source == "svd"
+                                      ? "🧠 SVD ile önerildi"
+                                      : "🌟 ${book.source!.toUpperCase()} önerisi",
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          book.publisher?.isNotEmpty == true
+                              ? "Yayınevi: ${book.publisher}"
+                              : "Yayınevi yok",
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          book.description.isNotEmpty
+                              ? book.description
+                              : "Açıklama bulunamadı.",
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ),
+              );
+            },
           );
         },
       ),

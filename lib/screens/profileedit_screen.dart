@@ -60,32 +60,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  Future<void> pickImage() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery);
-    if (picked == null) return;
-    setState(() => profileImage = File(picked.path));
-
-    final req =
-        http.MultipartRequest(
-            'POST',
-            Uri.parse('$baseUrl/api/auth/uploadProfileImage'),
-          )
-          ..fields['userId'] = userId
-          ..files.add(await http.MultipartFile.fromPath('image', picked.path));
-    final resp = await req.send();
-    if (resp.statusCode == 200) {
-      showSnack('Profil fotoğrafı güncellendi ✅');
-    } else {
-      showSnack('Fotoğraf yüklenemedi ❌', isError: true);
-    }
-  }
-
   void showSnack(String msg, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),
-        backgroundColor: isError ? Colors.redAccent : AppColors.accent,
+        backgroundColor:
+            isError ? Colors.redAccent : Colors.deepPurple.shade200,
         duration: const Duration(seconds: 2),
       ),
     );
@@ -111,7 +91,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   Text(
                     'Şifreyi Düzenle',
                     style: AppTextStyle.HEADING.copyWith(
-                      color: AppColors.accent,
+                      color: Colors.deepPurple.shade200,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -189,7 +169,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       Navigator.pop(ctx2);
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.accent,
+                      backgroundColor: Colors.deepPurple.shade200,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -227,7 +207,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             children: [
               Text(
                 '$title Düzenle',
-                style: AppTextStyle.HEADING.copyWith(color: AppColors.accent),
+                style: AppTextStyle.HEADING.copyWith(
+                  color: Colors.deepPurple.shade200,
+                ),
               ),
               const SizedBox(height: 12),
               TextField(
@@ -246,7 +228,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   onSave(ctrl.text.trim());
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.accent,
+                  backgroundColor: Colors.deepPurple.shade200,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -272,17 +254,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final horizontal = MediaQuery.of(context).size.width * 0.05;
     return ListTile(
       contentPadding: EdgeInsets.symmetric(horizontal: horizontal, vertical: 4),
-      leading: Icon(icon, color: AppColors.accent),
+      leading: Icon(icon, color: Colors.deepPurple.shade200),
       title: Text(
         label,
         style: AppTextStyle.BODY.copyWith(fontWeight: FontWeight.w500),
       ),
       subtitle: Text(value, style: AppTextStyle.BODY),
       trailing: IconButton(
-        icon: Icon(Icons.edit, color: AppColors.accent),
+        icon: Icon(Icons.edit, color: Colors.deepPurple.shade200),
         onPressed: onEdit,
       ),
     );
+  }
+
+  String _getInitials(String name) {
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.isEmpty) return '';
+    if (parts.length == 1) return parts[0][0].toUpperCase();
+    return (parts[0][0] + parts[1][0]).toUpperCase();
   }
 
   @override
@@ -294,7 +283,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profil Düzenle'),
-        backgroundColor: AppColors.accent,
+        backgroundColor: Colors.deepPurple.shade200,
       ),
       backgroundColor: AppColors.backgroundLight,
       body:
@@ -305,28 +294,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 child: Column(
                   children: [
                     GestureDetector(
-                      onTap: pickImage,
                       child: CircleAvatar(
                         radius: MediaQuery.of(context).size.width * 0.18,
-                        backgroundColor: Colors.grey[300],
-                        backgroundImage:
-                            profileImage != null
-                                ? FileImage(profileImage!)
-                                : const AssetImage('assets/default_avatar.png')
-                                    as ImageProvider,
-                        child: Align(
-                          alignment: Alignment.bottomRight,
-                          child: Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.edit,
-                              color: AppColors.accent,
-                              size: 20,
-                            ),
+                        backgroundColor: Colors.deepPurple.shade200,
+                        child: Text(
+                          _getInitials(name),
+
+                          /// <<<--- EKLENDİ
+                          style: TextStyle(
+                            fontSize: MediaQuery.of(context).size.width * 0.12,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
