@@ -88,11 +88,15 @@ class Book {
         id: json['id']?.toString() ?? '',
         title: fixEncoding(json['title'] ?? 'Başlık yok'),
         authors: Book._parseAuthors(json['authors']),
-        thumbnailUrl: json['thumbnailUrl'] ?? '',
+        thumbnailUrl:
+            (json['thumbnail_url'] ?? json['thumbnailUrl'] ?? '') as String,
         description: fixEncoding(json['description'] ?? ''),
         categories: [], // ya da json'dan geliyorsa oradan çek
         publisher: fixEncoding(json['publisher'] ?? ''),
-        publishedDate: json['publishedDate']?.toString() ?? '',
+        publishedDate:
+            (json['publishedDate'] as String?) ??
+            (json['published_date'] as String?) ??
+            '',
         pageCount: json['pageCount'] is int ? json['pageCount'] : 0,
         industryIdentifiers: [], // ya da parse et
         averageRating:
@@ -123,11 +127,15 @@ class Book {
         id: json['id']?.toString() ?? '',
         title: fixEncoding(json['title'] ?? 'Başlık yok'),
         authors: Book._parseAuthors(json['authors']),
-        thumbnailUrl: json['thumbnailUrl'] ?? '',
+        thumbnailUrl:
+            (json['thumbnail_url'] ?? json['thumbnailUrl'] ?? '') as String,
         description: fixEncoding(json['description'] ?? ''),
         categories: [], // ya da json'dan geliyorsa oradan çek
         publisher: fixEncoding(json['publisher'] ?? ''),
-        publishedDate: json['publishedDate']?.toString() ?? '',
+        publishedDate:
+            (json['publishedDate'] as String?) ??
+            (json['published_date'] as String?) ??
+            '',
         pageCount: json['pageCount'] is int ? json['pageCount'] : 0,
         industryIdentifiers: [], // ya da parse et
         averageRating:
@@ -160,19 +168,23 @@ class RecommendedBook {
   final List<String> authors;
   final String thumbnailUrl;
   final double score;
+  final String description;
 
   RecommendedBook({
     required this.title,
     required this.authors,
     required this.thumbnailUrl,
     required this.score,
+    required this.description,
   });
 
   factory RecommendedBook.fromJson(Map<String, dynamic> json) {
     return RecommendedBook(
-      title: json['title'],
-      authors: List<String>.from(json['authors']),
-      thumbnailUrl: json['thumbnail_url'],
+      title: fixEncoding(json['title'] ?? 'Başlık yok'),
+      authors: Book._parseAuthors(json['authors']),
+      thumbnailUrl:
+          (json['thumbnail_url'] ?? json['thumbnailUrl'] ?? '') as String,
+      description: fixEncoding(json['description'] ?? ''),
       score: json['score'].toDouble(),
     );
   }

@@ -13,7 +13,8 @@ class GoogleBooksRepository {
       final response = await http.get(Uri.parse(url));
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final utf8Body = utf8.decode(response.bodyBytes);
+        final data = jsonDecode(utf8Body);
         final List<dynamic> items = data['items'] ?? [];
         return items.map<Book>(_parseBook).toList();
       } else {
@@ -32,7 +33,6 @@ class GoogleBooksRepository {
             ?.map((e) => (e as Map<String, dynamic>)['identifier'] as String?)
             .whereType<String>()
             .toList();
-
 
     String thumb = info['imageLinks']?['thumbnail'] ?? '';
     if (thumb.startsWith('http:'))

@@ -49,8 +49,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
   void initState() {
     super.initState();
     SharedPreferences.getInstance().then((prefs) {
-      setState(() =>
-      _displayName = prefs.getString('user_name') ?? 'Misafir');
+      setState(() => _displayName = prefs.getString('user_name') ?? 'Misafir');
     });
     _loadUserData();
     _futureBooks = null;
@@ -69,14 +68,18 @@ class _HomePageScreenState extends State<HomePageScreen> {
     if (token == null || token.isEmpty) return [];
     final response = await http.get(
       Uri.parse(
-          'https://terrific-reprieve-production.up.railway.app/recommend'),
+        'https://terrific-reprieve-production.up.railway.app/recommend',
+      ),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
       },
     );
+
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
+      //final data = jsonDecode(response.body);
+      final utf8Body = utf8.decode(response.bodyBytes);
+      final data = jsonDecode(utf8Body);
       return (data['recommendations'] as List)
           .map((e) => Book.fromJson(e))
           .toList();
@@ -154,44 +157,44 @@ class _HomePageScreenState extends State<HomePageScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => FavoritesScreen(
-            userId: widget.userId,
-            userRatings:
-            _userRatings.map((k, v) => MapEntry(k, v.toInt())),
-            onAddToLibrary: (b) {
-              if (!mounted) return;
-              setState(() {
-                _favoriteBooks.removeWhere((x) => x.id == b.id);
-                _libraryBooks.add(b);
-              });
-            },
-            onRate: (b, r) {
-              if (!mounted) return;
-              setState(() => _userRatings[b.id] = r.toDouble());
-            },
-          ),
+          builder:
+              (_) => FavoritesScreen(
+                userId: widget.userId,
+                userRatings: _userRatings.map((k, v) => MapEntry(k, v.toInt())),
+                onAddToLibrary: (b) {
+                  if (!mounted) return;
+                  setState(() {
+                    _favoriteBooks.removeWhere((x) => x.id == b.id);
+                    _libraryBooks.add(b);
+                  });
+                },
+                onRate: (b, r) {
+                  if (!mounted) return;
+                  setState(() => _userRatings[b.id] = r.toDouble());
+                },
+              ),
         ),
       ).then((_) => setState(() => _selectedIndex = 1));
     } else if (index == 2) {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => LibraryScreen(
-            userId: widget.userId,
-            userRatings:
-            _userRatings.map((k, v) => MapEntry(k, v.toInt())),
-            onRemoveFromLibrary: (b) {
-              if (!mounted) return;
-              setState(() {
-                _libraryBooks.removeWhere((x) => x.id == b.id);
-                _userRatings.remove(b.id);
-              });
-            },
-            onRate: (b, r) {
-              if (!mounted) return;
-              setState(() => _userRatings[b.id] = r.toDouble());
-            },
-          ),
+          builder:
+              (_) => LibraryScreen(
+                userId: widget.userId,
+                userRatings: _userRatings.map((k, v) => MapEntry(k, v.toInt())),
+                onRemoveFromLibrary: (b) {
+                  if (!mounted) return;
+                  setState(() {
+                    _libraryBooks.removeWhere((x) => x.id == b.id);
+                    _userRatings.remove(b.id);
+                  });
+                },
+                onRate: (b, r) {
+                  if (!mounted) return;
+                  setState(() => _userRatings[b.id] = r.toDouble());
+                },
+              ),
         ),
       ).then((_) => setState(() => _selectedIndex = 1));
     } else {
@@ -206,49 +209,54 @@ class _HomePageScreenState extends State<HomePageScreen> {
       if (token == null || token.isEmpty) return;
 
       final rawRecs = await RecommendationService.fetchRecommendations(
-          token, widget.userId);
-      final recBooks = rawRecs.map((rec) {
-        return Book(
-          id: rec['book_id'].toString(),
-          title: rec['title'] ?? 'Başlık yok',
-          authors: _parseAuthors(rec['authors']),
-          thumbnailUrl: rec['thumbnail_url'] ?? '',
-          publisher: rec['publisher'] ?? '',
-          publishedDate: rec['published_date'] ?? '',
-          description: rec['description'] ?? '',
-          categories: [],
-        );
-      }).toList();
+        token,
+        widget.userId,
+      );
+      final recBooks =
+          rawRecs.map((rec) {
+            return Book(
+              id: rec['book_id'].toString(),
+              title: rec['title'] ?? 'Başlık yok',
+              authors: _parseAuthors(rec['authors']),
+              thumbnailUrl: rec['thumbnailUrl'] as String? ?? '',
+              publisher: rec['publisher'] ?? '',
+              publishedDate: rec['published_date'] ?? '',
+              description: rec['description'] ?? '',
+              categories: [],
+            );
+          }).toList();
 
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => RecommendationsScreen(
-            fetchRecommendations: fetchRecommendations,
-            userRatings: <String, double>{},
-            onToggleFavorite: (b) {
-              setState(() {
-                if (_favoriteBooks.any((x) => x.id == b.id))
-                  _favoriteBooks.removeWhere((x) => x.id == b.id);
-                else
-                  _favoriteBooks.add(b);
-              });
-            },
-            onAddToLibrary: (b) {
-              setState(() {
-                if (!_libraryBooks.any((x) => x.id == b.id))
-                  _libraryBooks.add(b);
-              });
-            },
-            onRate: (b, r) =>
-                setState(() => _userRatings[b.id] = r.toDouble()),
-          ),
+          builder:
+              (_) => RecommendationsScreen(
+                fetchRecommendations: fetchRecommendations,
+                userRatings: <String, double>{},
+                onToggleFavorite: (b) {
+                  setState(() {
+                    if (_favoriteBooks.any((x) => x.id == b.id))
+                      _favoriteBooks.removeWhere((x) => x.id == b.id);
+                    else
+                      _favoriteBooks.add(b);
+                  });
+                },
+                onAddToLibrary: (b) {
+                  setState(() {
+                    if (!_libraryBooks.any((x) => x.id == b.id))
+                      _libraryBooks.add(b);
+                  });
+                },
+                onRate:
+                    (b, r) => setState(() => _userRatings[b.id] = r.toDouble()),
+              ),
         ),
       );
     } catch (e) {
       debugPrint("Öneriler alınamadı: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Öneriler alınamadı")));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Öneriler alınamadı")));
     }
   }
 
@@ -288,50 +296,53 @@ class _HomePageScreenState extends State<HomePageScreen> {
           ),
         ),
         child: NestedScrollView(
-          headerSliverBuilder: (_, __) => [
-            SliverAppBar(
-              backgroundColor: Colors.deepPurple.shade200,
-              expandedHeight: headerH,
-              pinned: true,
-              flexibleSpace: FlexibleSpaceBar(
-                collapseMode: CollapseMode.pin,
-                title: Text(
-                  'Merhaba, ${widget.name}!',
-                  style: AppTextStyle.BODY.copyWith(color: Colors.white),
-                ),
-                background: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.deepPurple.shade100.withOpacity(0.8),
-                        Colors.deepPurple.shade200,
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+          headerSliverBuilder:
+              (_, __) => [
+                SliverAppBar(
+                  backgroundColor: Colors.deepPurple.shade200,
+                  expandedHeight: headerH,
+                  pinned: true,
+                  flexibleSpace: FlexibleSpaceBar(
+                    collapseMode: CollapseMode.pin,
+                    title: Text(
+                      'Merhaba, ${widget.name}!',
+                      style: AppTextStyle.BODY.copyWith(color: Colors.white),
                     ),
-                  ),
-                ),
-              ),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.recommend, color: Colors.white),
-                  onPressed: navigateToRecommendations,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.person, color: Colors.white),
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ProfileScreen(
-                        name: widget.name,
-                        userId: widget.userId,
+                    background: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.deepPurple.shade100.withOpacity(0.8),
+                            Colors.deepPurple.shade200,
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
                       ),
                     ),
                   ),
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.recommend, color: Colors.white),
+                      onPressed: navigateToRecommendations,
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.person, color: Colors.white),
+                      onPressed:
+                          () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (_) => ProfileScreen(
+                                    name: widget.name,
+                                    userId: widget.userId,
+                                  ),
+                            ),
+                          ),
+                    ),
+                  ],
                 ),
               ],
-            ),
-          ],
           body: Column(
             children: [
               // —— Arama Kartı ——
@@ -349,8 +360,10 @@ class _HomePageScreenState extends State<HomePageScreen> {
                     decoration: InputDecoration(
                       hintText: 'Kitap ara...',
                       hintStyle: TextStyle(color: Colors.grey[600]),
-                      prefixIcon:
-                      Icon(Icons.search, color: AppColors.greyMedium),
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: AppColors.greyMedium,
+                      ),
                       suffixIcon: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -366,15 +379,16 @@ class _HomePageScreenState extends State<HomePageScreen> {
                             ),
                           IconButton(
                             icon: const Icon(Icons.send),
-                            onPressed: () =>
-                                _runSearch(_searchController.text),
+                            onPressed: () => _runSearch(_searchController.text),
                           ),
                         ],
                       ),
                       filled: true,
                       fillColor: Colors.white,
-                      contentPadding:
-                      const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical: 0,
+                        horizontal: 16,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(30),
                         borderSide: BorderSide.none,
@@ -387,179 +401,209 @@ class _HomePageScreenState extends State<HomePageScreen> {
 
               // —— Kitap Listesi veya Son Aramalar ——
               Expanded(
-                child: _futureBooks == null
-                    ? (_recentSearches.isEmpty
-                // “Boş durum” — arama yok, geçmiş yok
-                    ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Image.asset(
-                        'assets/images/logo.png',
-                        width: 200,
-                        fit: BoxFit.contain,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Bir kitap arayın...',
-                        style: AppTextStyle.BODY
-                            .copyWith(color: Colors.grey[700]),
-                      ),
-                    ],
-                  ),
-                )
-                // Son aramalar varsa
-                    : ListView.separated(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: w * 0.05,
-                    vertical: h * 0.02,
-                  ),
-                  itemCount: _recentSearches.length,
-                  separatorBuilder: (_, __) => const Divider(),
-                  itemBuilder: (ctx, i) {
-                    final term = _recentSearches[i];
-                    return ListTile(
-                      leading: const Icon(Icons.history),
-                      title: Text(term),
-                      onTap: () {
-                        _searchController.text = term;
-                        _runSearch(term);
-                      },
-                    );
-                  },
-                ))
-                // Arama sonuçları varsa
-                    : FutureBuilder<List<Book>>(
-                  future: _futureBooks,
-                  builder: (ctx, snap) {
-                    if (snap.connectionState !=
-                        ConnectionState.done) {
-                      return const Center(
-                          child: CircularProgressIndicator());
-                    }
-                    if (snap.hasError) {
-                      return Center(
-                          child: Text('Hata: ${snap.error}',
-                              style: AppTextStyle.BODY));
-                    }
-                    final books = snap.data ?? [];
-                    return GridView.builder(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: w * 0.05,
-                        vertical: h * 0.02,
-                      ),
-                      gridDelegate:
-                      SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: w * 0.05,
-                        mainAxisSpacing: h * 0.02,
-                        childAspectRatio: 0.6,
-                      ),
-                      itemCount: books.length,
-                      itemBuilder: (_, i) {
-                        final b = books[i];
-                        final rDouble = _userRatings[b.id] ?? 0.0;
-                        final rInt = rDouble.toInt();
-                        return GestureDetector(
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => BookDetailScreen(
-                                userId: widget.userId,
-                                book: b,
-                                isFavorite: _favoriteBooks
-                                    .any((x) => x.id == b.id),
-                                isInLibrary: _libraryBooks
-                                    .any((x) => x.id == b.id),
-                                userRating: rInt,
-                                onToggleFavorite: (bx) {
-                                  if (!mounted) return;
-                                  setState(() {
-                                    if (_favoriteBooks.any((x) =>
-                                    x.id == bx.id))
-                                      _favoriteBooks.removeWhere(
-                                              (x) => x.id == bx.id);
-                                    else
-                                      _favoriteBooks.add(bx);
-                                  });
-                                },
-                                onToggleLibrary: (bx) {
-                                  if (!mounted) return;
-                                  setState(() {
-                                    if (_libraryBooks.any((x) =>
-                                    x.id == bx.id)) {
-                                      _libraryBooks.removeWhere(
-                                              (x) => x.id == bx.id);
-                                      _userRatings.remove(bx.id);
-                                    } else {
-                                      _libraryBooks.add(bx);
-                                    }
-                                  });
-                                },
-                                onRate: (bx, rating) {
-                                  if (!mounted) return;
-                                  setState(() => _userRatings[
-                                  bx.id] = rating.toDouble());
-                                },
+                child:
+                    _futureBooks == null
+                        ? (_recentSearches.isEmpty
+                            // “Boş durum” — arama yok, geçmiş yok
+                            ? Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Image.asset(
+                                    'assets/images/logo.png',
+                                    width: 200,
+                                    fit: BoxFit.contain,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'Bir kitap arayın...',
+                                    style: AppTextStyle.BODY.copyWith(
+                                      color: Colors.grey[700],
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
-                          ),
-                          child: Card(
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16)),
-                            elevation: 6,
-                            margin: const EdgeInsets.all(8),
-                            child: Column(
-                              crossAxisAlignment:
-                              CrossAxisAlignment.stretch,
-                              children: [
-                                Expanded(
-                                  child: ClipRRect(
-                                    borderRadius:
-                                    const BorderRadius.vertical(
-                                        top: Radius.circular(16)),
-                                    child: b.thumbnailUrl.isNotEmpty
-                                        ? Image.network(b.thumbnailUrl,
-                                        fit: BoxFit.cover)
-                                        : const Icon(Icons.book,
-                                        size: 80,
-                                        color: Colors.grey),
-                                  ),
+                            )
+                            // Son aramalar varsa
+                            : ListView.separated(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: w * 0.05,
+                                vertical: h * 0.02,
+                              ),
+                              itemCount: _recentSearches.length,
+                              separatorBuilder: (_, __) => const Divider(),
+                              itemBuilder: (ctx, i) {
+                                final term = _recentSearches[i];
+                                return ListTile(
+                                  leading: const Icon(Icons.history),
+                                  title: Text(term),
+                                  onTap: () {
+                                    _searchController.text = term;
+                                    _runSearch(term);
+                                  },
+                                );
+                              },
+                            ))
+                        // Arama sonuçları varsa
+                        : FutureBuilder<List<Book>>(
+                          future: _futureBooks,
+                          builder: (ctx, snap) {
+                            if (snap.connectionState != ConnectionState.done) {
+                              return const Center(
+                                child: CircularProgressIndicator(),
+                              );
+                            }
+                            if (snap.hasError) {
+                              return Center(
+                                child: Text(
+                                  'Hata: ${snap.error}',
+                                  style: AppTextStyle.BODY,
                                 ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 4),
-                                  child: Text(
-                                    b.title,
-                                    style: AppTextStyle.BODY,
-                                    textAlign: TextAlign.center,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
+                              );
+                            }
+                            final books = snap.data ?? [];
+                            return GridView.builder(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: w * 0.05,
+                                vertical: h * 0.02,
+                              ),
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                    crossAxisSpacing: w * 0.05,
+                                    mainAxisSpacing: h * 0.02,
+                                    childAspectRatio: 0.6,
                                   ),
-                                ),
-                                Padding(
-                                  padding:
-                                  const EdgeInsets.only(bottom: 8),
-                                  child: Text(
-                                    b.authors.isNotEmpty
-                                        ? b.authors.join(', ')
-                                        : 'Bilinmeyen Yazar',
-                                    style: AppTextStyle
-                                        .MINI_DEFAULT_DESCRIPTION_TEXT
-                                        .copyWith(color: Colors.grey),
-                                    textAlign: TextAlign.center,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                              itemCount: books.length,
+                              itemBuilder: (_, i) {
+                                final b = books[i];
+                                final rDouble = _userRatings[b.id] ?? 0.0;
+                                final rInt = rDouble.toInt();
+                                return GestureDetector(
+                                  onTap:
+                                      () => Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder:
+                                              (_) => BookDetailScreen(
+                                                userId: widget.userId,
+                                                book: b,
+                                                isFavorite: _favoriteBooks.any(
+                                                  (x) => x.id == b.id,
+                                                ),
+                                                isInLibrary: _libraryBooks.any(
+                                                  (x) => x.id == b.id,
+                                                ),
+                                                userRating: rInt,
+                                                onToggleFavorite: (bx) {
+                                                  if (!mounted) return;
+                                                  setState(() {
+                                                    if (_favoriteBooks.any(
+                                                      (x) => x.id == bx.id,
+                                                    ))
+                                                      _favoriteBooks
+                                                          .removeWhere(
+                                                            (x) =>
+                                                                x.id == bx.id,
+                                                          );
+                                                    else
+                                                      _favoriteBooks.add(bx);
+                                                  });
+                                                },
+                                                onToggleLibrary: (bx) {
+                                                  if (!mounted) return;
+                                                  setState(() {
+                                                    if (_libraryBooks.any(
+                                                      (x) => x.id == bx.id,
+                                                    )) {
+                                                      _libraryBooks.removeWhere(
+                                                        (x) => x.id == bx.id,
+                                                      );
+                                                      _userRatings.remove(
+                                                        bx.id,
+                                                      );
+                                                    } else {
+                                                      _libraryBooks.add(bx);
+                                                    }
+                                                  });
+                                                },
+                                                onRate: (bx, rating) {
+                                                  if (!mounted) return;
+                                                  setState(
+                                                    () =>
+                                                        _userRatings[bx.id] =
+                                                            rating.toDouble(),
+                                                  );
+                                                },
+                                              ),
+                                        ),
+                                      ),
+                                  child: Card(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    elevation: 6,
+                                    margin: const EdgeInsets.all(8),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: [
+                                        Expanded(
+                                          child: ClipRRect(
+                                            borderRadius:
+                                                const BorderRadius.vertical(
+                                                  top: Radius.circular(16),
+                                                ),
+                                            child:
+                                                b.thumbnailUrl.isNotEmpty
+                                                    ? Image.network(
+                                                      b.thumbnailUrl,
+                                                      fit: BoxFit.cover,
+                                                    )
+                                                    : const Icon(
+                                                      Icons.book,
+                                                      size: 80,
+                                                      color: Colors.grey,
+                                                    ),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
+                                          child: Text(
+                                            b.title,
+                                            style: AppTextStyle.BODY,
+                                            textAlign: TextAlign.center,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.only(
+                                            bottom: 8,
+                                          ),
+                                          child: Text(
+                                            b.authors.isNotEmpty
+                                                ? b.authors.join(', ')
+                                                : 'Bilinmeyen Yazar',
+                                            style: AppTextStyle
+                                                .MINI_DEFAULT_DESCRIPTION_TEXT
+                                                .copyWith(color: Colors.grey),
+                                            textAlign: TextAlign.center,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    );
-                  },
-                ),
+                                );
+                              },
+                            );
+                          },
+                        ),
               ),
             ],
           ),
@@ -580,8 +624,10 @@ class _HomePageScreenState extends State<HomePageScreen> {
                 end: Alignment.bottomRight,
               ),
             ),
-            child:
-            Text('Bookify', style: AppTextStyle.HEADING.copyWith(color: Colors.white)),
+            child: Text(
+              'Bookify',
+              style: AppTextStyle.HEADING.copyWith(color: Colors.white),
+            ),
           ),
           ListTile(
             leading: Icon(Icons.settings, color: Colors.deepPurple.shade200),
@@ -594,12 +640,15 @@ class _HomePageScreenState extends State<HomePageScreen> {
           const Divider(),
           ListTile(
             leading: Icon(Icons.logout, color: AppColors.logoPink),
-            title: Text('Çıkış Yap',
-                style: AppTextStyle.BODY.copyWith(color: AppColors.logoPink)),
-            onTap: () => Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => const LoginScreen())),
+            title: Text(
+              'Çıkış Yap',
+              style: AppTextStyle.BODY.copyWith(color: AppColors.logoPink),
+            ),
+            onTap:
+                () => Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                ),
           ),
           ListTile(
             leading: Icon(Icons.recommend, color: Colors.deepPurple.shade200),
@@ -609,13 +658,14 @@ class _HomePageScreenState extends State<HomePageScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => RecommendationsScreen(
-                    fetchRecommendations: fetchRecommendations,
-                    userRatings: <String, double>{},
-                    onToggleFavorite: (Book) {},
-                    onAddToLibrary: (Book) {},
-                    onRate: (Book, int) {},
-                  ),
+                  builder:
+                      (_) => RecommendationsScreen(
+                        fetchRecommendations: fetchRecommendations,
+                        userRatings: <String, double>{},
+                        onToggleFavorite: (Book) {},
+                        onAddToLibrary: (Book) {},
+                        onRate: (Book, int) {},
+                      ),
                 ),
               );
             },

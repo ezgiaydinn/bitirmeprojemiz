@@ -282,8 +282,38 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
                                         height: 90,
                                         width: 60,
                                         fit: BoxFit.cover,
+                                        // yükleme sırasında bir spinner göster
+                                        loadingBuilder: (ctx, child, progress) {
+                                          if (progress == null) return child;
+                                          return const SizedBox(
+                                            height: 90,
+                                            width: 60,
+                                            child: Center(
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                        // hata halinde kırık görsel ikonu göster
+                                        errorBuilder:
+                                            (_, __, ___) => const SizedBox(
+                                              height: 90,
+                                              width: 60,
+                                              child: Center(
+                                                child: Icon(
+                                                  Icons.broken_image,
+                                                  size: 40,
+                                                  color: Colors.grey,
+                                                ),
+                                              ),
+                                            ),
                                       )
-                                      : const Icon(Icons.book, size: 60),
+                                      : const Icon(
+                                        Icons.book,
+                                        size: 60,
+                                        color: Colors.grey,
+                                      ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -312,7 +342,7 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
                                     itemCount: 5,
                                     itemSize: 20,
                                     itemPadding: const EdgeInsets.symmetric(
-                                      horizontal: 2.0,
+                                      horizontal: 2,
                                     ),
                                     itemBuilder:
                                         (context, _) => const Icon(
@@ -326,15 +356,14 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
                                 ],
                               ),
                             ),
-                            IconButton(
-                              icon: Icon(
-                                isFavorite
-                                    ? Icons.favorite
-                                    : Icons.favorite_border,
-                                color: Colors.deepPurple,
-                              ),
-                              onPressed: () => widget.onToggleFavorite(book),
-                            ),
+                            // İstersen buradaki favori butonunu ekleyebilirsin:
+                            // IconButton(
+                            //   icon: Icon(
+                            //     isFavorite ? Icons.favorite : Icons.favorite_border,
+                            //     color: Colors.deepPurple,
+                            //   ),
+                            //   onPressed: () => widget.onToggleFavorite(book),
+                            // ),
                           ],
                         ),
                         const SizedBox(height: 8),
@@ -353,7 +382,7 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
                                   book.source == "svd"
                                       ? "🧠 SVD ile önerildi"
                                       : "🌟 ${book.source!.toUpperCase()} önerisi",
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     fontSize: 12,
                                     color: Colors.grey,
                                   ),
