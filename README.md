@@ -1,16 +1,57 @@
-# bitirmeprojesi
+# Bookify
 
-A new Flutter project.
+Bookify is a personalized book recommendation mobile application developed as a two-person graduation project.
 
-## Getting Started
+The application combines a Flutter-based mobile interface with a Node.js/Express backend and a machine learning-based recommendation service. Users can explore books, rate them, and receive personalized recommendations based on their preferences and interactions.
 
-This project is a starting point for a Flutter application.
+## Features
 
-A few resources to get you started if this is your first Flutter project:
+- User registration and authentication
+- Book search and browsing
+- Book details
+- Book rating
+- Personalized book recommendations
+- Content-based and collaborative filtering
+- Integration with Google Books API
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## Technologies
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+### Mobile Application
+- Flutter
+- Dart
+- Riverpod
+
+### Backend
+- Node.js
+- Express.js
+- REST API
+- MySQL
+
+### Machine Learning
+- Python
+- FastAPI
+- SVD
+- TF-IDF
+- FastText
+
+### External API
+- Google Books API
+
+## Project Structure
+
+The project consists of two main components:
+
+- **Mobile application:** Flutter-based client application
+- **Backend:** Node.js/Express REST API and Python-based recommendation service
+
+The backend repository can be found here:
+
+[Backend Repository](https://github.com/ezgiydinn/projem_backend)
+
+## Team
+
+This project was developed as a two-person graduation project.
+
+**Contributors:**
+- Dilara Kökmen
+- Ezgi Aydın
