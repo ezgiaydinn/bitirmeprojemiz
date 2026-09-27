@@ -46,7 +46,7 @@ The project consists of two main components:
 
 The backend repository can be found here:
 
-[Backend Repository](https://github.com/ezgiydinn/projem_backend)
+[Backend Repository →](https://github.com/ezgiaydinn/projem_backend)
 
 ## Team
 
